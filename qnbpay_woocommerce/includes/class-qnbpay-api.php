@@ -186,4 +186,21 @@ class QNBPay_Api
         }
         return $this->post('/api/confirmPayment', $body, true);
     }
+
+    /**
+     * REFACTOR (BULGULAR #1/#11): transaction status from QNB, the authority for
+     * settlement. Payload hash is "invoice_id|merchant_key"; include_pending_status is a
+     * JSON boolean; post() sends the body once and the auth/accept headers once (the three
+     * bugs that made the old checkStatus() return HTTP 400).
+     */
+    public function check_status($invoice_id)
+    {
+        $hash = $this->generate_hash($invoice_id . '|' . $this->option('merchant_key'));
+        return $this->post('/api/checkstatus', array(
+            'invoice_id'             => $invoice_id,
+            'merchant_key'           => $this->option('merchant_key'),
+            'hash_key'               => $hash,
+            'include_pending_status' => true,
+        ), true);
+    }
 }
