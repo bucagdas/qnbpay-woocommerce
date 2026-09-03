@@ -3,7 +3,7 @@
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.0.3
+    Version: 1.0.4
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5

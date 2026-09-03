@@ -40,10 +40,22 @@ final class QNBPay_Blocks extends AbstractPaymentMethodType
 
     public function get_payment_method_data()
     {
+        $theme = isset($this->settings['checkout_theme']) ? $this->settings['checkout_theme'] : 'kartli';
+        if (!in_array($theme, array('sade', 'kartli', 'vurgulu'), true)) {
+            $theme = 'kartli';
+        }
+        $cardbase = plugins_url('assets/images/cards/', dirname(__DIR__) . '/qnb-woocommerce.php');
+        $icons = array();
+        foreach (array('mastercard', 'visa', 'amex', 'troy') as $c) {
+            $icons[] = $cardbase . $c . '.svg';
+        }
         return array(
-            'title'       => isset($this->settings['title']) ? $this->settings['title'] : 'QNBPay',
+            'title'       => (isset($this->settings['title']) && $this->settings['title'] !== '') ? $this->settings['title'] : 'Banka/Kredi Karti ile Ode',
             'description' => isset($this->settings['description']) ? $this->settings['description'] : '',
             'supports'    => array('products'),
+            'theme'       => $theme,
+            'icons'       => $icons,
+            'note'        => __('Kartinizla QNB\'nin guvenli odeme sayfasinda odeyeceksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay'),
         );
     }
 }

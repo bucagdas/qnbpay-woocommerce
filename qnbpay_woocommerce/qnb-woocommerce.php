@@ -25,7 +25,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         // Show Description
         $this->method_description = __("Woocommerce için QNBPay Entegrasyonu", 'qnb');
         // vertical tab title
-        $this->title = __("QNBPay Pos", 'qnb');
+        $this->title = __("Banka/Kredi Karti ile Ode", 'qnb');
         $this->icon = null;
         $this->has_fields = true;
         // support default form with credit card
@@ -154,17 +154,28 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
                 'type' => 'checkbox',
                 'default' => 'no',
             ],
+            'checkout_theme' => array(
+                'title'       => __('Odeme satiri temasi', 'qnb'),
+                'type'        => 'select',
+                'default'     => 'kartli',
+                'options'     => array(
+                    'sade'    => __('Sade', 'qnb'),
+                    'kartli'  => __('Kartli (kart logolari)', 'qnb'),
+                    'vurgulu' => __('Vurgulu (guvenli odeme paneli)', 'qnb'),
+                ),
+                'description' => __('Odeme yonteminin checkout gorunumu.', 'qnb'),
+            ),
             'title' => [
                 'title' => __('Başlık', 'qnb'),
                 'type' => 'text',
                 'desc_tip' => __('Başlık', 'qnb'),
-                'default' => __('QNBPay sanalpos', 'qnb'),
+                'default' => __('Banka/Kredi Karti ile Ode', 'qnb'),
             ],
             'description' => [
                 'title' => __('Açıklama', 'qnb'),
                 'type' => 'textarea',
                 'desc_tip' => __('Açıklama', 'qnb'),
-                'default' => __('Kredi kartıyla ödeme yap', 'qnb'),
+                'default' => __('Kredi veya banka kartinizla QNB guvenli odeme sayfasinda odeyin.', 'qnb'),
                 'css' => 'max-width:450px;',
             ],
 
@@ -281,15 +292,56 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         return $localizeContent;
     }
 
+    /** Selected checkout row theme (sade|kartli|vurgulu). */
+    public function qnbpay_theme()
+    {
+        $t = $this->get_option('checkout_theme', 'kartli');
+        return in_array($t, array('sade', 'kartli', 'vurgulu'), true) ? $t : 'kartli';
+    }
+
+    /** Accepted card brand <img> tags at the given pixel height. */
+    public function card_icons_html($height)
+    {
+        $base  = plugins_url('assets/images/cards/', __FILE__);
+        $cards = array('mastercard', 'visa', 'amex', 'troy');
+        $out = '';
+        foreach ($cards as $c) {
+            $out .= '<img src="' . esc_url($base . $c . '.svg') . '" alt="' . esc_attr($c) . '" style="height:' . (int) $height . 'px;width:auto;margin-left:4px;vertical-align:middle;display:inline-block;" />';
+        }
+        return $out;
+    }
+
+    public function get_icon()
+    {
+        $theme = $this->qnbpay_theme();
+        $h = ($theme === 'sade') ? 20 : (($theme === 'vurgulu') ? 28 : 26);
+        $html = '<span class="qnbpay-card-icons" style="float:right;display:inline-flex;align-items:center;">' . $this->card_icons_html($h) . '</span>';
+        return apply_filters('woocommerce_gateway_icon', $html, $this->id);
+    }
+
     public function payment_fields()
     {
         // No card fields here: the buyer enters the card on QNB's hosted page.
         if ($description = $this->get_description()) {
             echo wpautop(wptexturize($description));
         }
-        echo '<div class="qnbpay-hosted-note" style="padding:8px 0;color:#333;">'
-            . esc_html__('Odemenizi QNB\'nin guvenli odeme sayfasinda tamamlayacaksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay')
-            . '</div>';
+        $theme = $this->qnbpay_theme();
+        $note = esc_html__('Kartinizla QNB\'nin guvenli odeme sayfasinda odeyeceksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay');
+        if ($theme === 'sade') {
+            echo '<div class="qnbpay-hosted-note" style="padding:8px 0;color:#555;">' . $note . '</div>';
+        } elseif ($theme === 'vurgulu') {
+            echo '<div class="qnbpay-hosted-note" style="border-left:4px solid #6c2bd9;background:#faf9ff;border-radius:8px;padding:14px 16px;color:#333;">'
+                . '<div style="font-weight:600;margin-bottom:6px;">' . esc_html__('3D Secure ile guvenli odeme', 'QNBPay') . '</div>'
+                . '<div style="margin-bottom:10px;color:#555;">' . $note . '</div>'
+                . '<div>' . $this->card_icons_html(26) . '</div>'
+                . '</div>';
+        } else {
+            echo '<div class="qnbpay-hosted-note" style="background:#f7f8fa;border:1px solid #e6e8eb;border-radius:8px;padding:12px 14px;color:#333;">'
+                . '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'
+                . '<span style="color:#555;">' . $note . '</span>'
+                . '<span style="display:inline-flex;align-items:center;">' . $this->card_icons_html(24) . '</span>'
+                . '</div></div>';
+        }
         return;
     }
 
