@@ -18,7 +18,20 @@ add_action('plugins_loaded', 'qnb_pos', 0);
 add_action('before_woocommerce_init', function () {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
     }
+});
+
+// REFACTOR (Blocks): register the Cart/Checkout Blocks payment method integration so the
+// gateway is selectable in the Checkout block (classic and blocks share the hosted server flow).
+add_action('woocommerce_blocks_loaded', function () {
+    if (!class_exists(\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class)) {
+        return;
+    }
+    require_once __DIR__ . '/includes/class-qnbpay-blocks.php';
+    add_action('woocommerce_blocks_payment_method_type_registration', function ($registry) {
+        $registry->register(new QNBPay_Blocks());
+    });
 });
 add_action('init', 'my_custom_public_page');
 add_action('wp_ajax_delete_qnb_card', 'delete_qnb_card');
