@@ -89,7 +89,7 @@ class QNBPay_Api
         ));
         if (is_wp_error($res)) {
             $this->last_error = $res->get_error_message();
-            error_log('QNBpay API ' . $path . ': ' . $res->get_error_message());
+            qnbpay_log('API ' . $path . ': ' . $res->get_error_message(), 'error');
             return null;
         }
         return json_decode(wp_remote_retrieve_body($res));
@@ -152,6 +152,23 @@ class QNBPay_Api
         if ($txn !== '') {
             $body['invoice']['transaction_type'] = $txn; // Auth / PreAuth
         }
+        // Limit the installment options shown on QNB's hosted page to the ones the
+        // merchant selected in settings. Empty selection => QNB shows its POS defaults.
+        $sel = $this->option('installments');
+        if (is_array($sel) && !empty($sel)) {
+            $counts = array();
+            foreach ($sel as $n) {
+                $n = (int) $n;
+                if ($n >= 1 && $n <= 12) {
+                    $counts[] = $n;
+                }
+            }
+            if (!empty($counts)) {
+                $body['selected_installments'] = array_values(array_unique($counts));
+            }
+        }
+        // Who pays the installment commission (vade farki): 'yes' => buyer pays.
+        $body['is_comission_from_user'] = ($this->option('installment_type') === 'yes') ? '1' : '0';
         $webhook = $this->option('sale_webhook_key');
         if ($webhook !== '') {
             $body['invoice']['sale_web_hook_key'] = $webhook;
@@ -190,6 +207,25 @@ class QNBPay_Api
             $body['total'] = $total;
         }
         return $this->post('/api/confirmPayment', $body, true);
+    }
+
+    /**
+     * Refund a payment. $amount null/empty => full refund; otherwise a partial
+     * amount (<= captured total). Payload hash is "total|invoice_id|merchant_key".
+     * Status 100 = refunded; 101 = accepted (QNB completes it, verify with checkstatus).
+     * QNB requires >= 30s between refunds on the same transaction (status code 49).
+     */
+    public function refund($invoice_id, $amount = null)
+    {
+        $merchant_key = $this->option('merchant_key');
+        $amount_str = ($amount === null || $amount === '') ? '' : number_format((float) $amount, 2, '.', '');
+        $hash = $this->generate_hash($amount_str . '|' . $invoice_id . '|' . $merchant_key);
+        return $this->post('/api/refund', array(
+            'invoice_id'   => $invoice_id,
+            'merchant_key' => $merchant_key,
+            'amount'       => $amount_str,
+            'hash_key'     => $hash,
+        ), true);
     }
 
     /**

@@ -41,7 +41,8 @@ final class QNBPay_Blocks extends AbstractPaymentMethodType
     public function get_payment_method_data()
     {
         $theme = isset($this->settings['checkout_theme']) ? $this->settings['checkout_theme'] : 'kartli';
-        if (!in_array($theme, array('sade', 'kartli', 'vurgulu'), true)) {
+        $valid = class_exists('QNBPay_sanalpos') ? QNBPay_sanalpos::qnbpay_theme_keys() : array('sade', 'kartli', 'vurgulu', 'modern', 'kurumsal');
+        if (!in_array($theme, $valid, true)) {
             $theme = 'kartli';
         }
         $cardbase = plugins_url('assets/images/cards/', dirname(__DIR__) . '/qnb-woocommerce.php');

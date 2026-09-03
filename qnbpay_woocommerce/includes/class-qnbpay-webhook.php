@@ -84,7 +84,7 @@ class QNBPay_Webhook
             }
         }
         if ($amount !== null && abs($amount - (float) $order->get_total()) > 0.01) {
-            error_log('QNBpay checkstatus: amount mismatch for order ' . $order->get_id());
+            qnbpay_log('checkstatus: amount mismatch for order ' . $order->get_id(), 'warning');
             return false;
         }
         return $status;
@@ -112,14 +112,14 @@ class QNBPay_Webhook
             $total_ok = ($h_total === '') ? true : (abs((float) $h_total - (float) $order->get_total()) <= 0.01);
             $currency_ok = ($h_currency === '') ? true : (strcasecmp($h_currency, $order->get_currency()) === 0);
             if (!$invoice_ok || !$total_ok || !$currency_ok) {
-                error_log('QNBpay ' . $context . ': hash_key mismatch for order ' . $order->get_id());
+                qnbpay_log($context . ': hash_key mismatch for order ' . $order->get_id(), 'warning');
                 return false;
             }
         }
 
         $status = self::checkstatus_paid($invoice_id, $order);
         if ($status === false) {
-            error_log('QNBpay ' . $context . ': checkstatus did not confirm order ' . $order->get_id());
+            qnbpay_log($context . ': checkstatus did not confirm order ' . $order->get_id(), 'warning');
             return false;
         }
 
@@ -171,7 +171,7 @@ class QNBPay_Webhook
             $order = self::order_from_invoice($invoice_id);
             if (!$order) {
                 status_header(400);
-                error_log('QNBpay webhook: order not found for invoice');
+                qnbpay_log('webhook: order not found for invoice', 'warning');
                 exit;
             }
             $verdict = self::settle($order, $invoice_id, $payment_status, $transaction_type, $order_no, $incoming_hash, 'webhook');

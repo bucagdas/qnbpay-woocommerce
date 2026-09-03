@@ -27,10 +27,26 @@
         });
     };
 
+    var iconHeight = function (t) {
+        if (t === 'sade') { return 20; }
+        if (t === 'vurgulu') { return 28; }
+        if (t === 'kurumsal') { return 22; }
+        return 24;
+    };
+
+    // Small padlock icon (inline SVG) used by some themes.
+    var lockEl = function (color, size) {
+        return el('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', style: { verticalAlign: 'middle', flex: 'none' }, 'aria-hidden': true },
+            el('rect', { x: 4, y: 10, width: 16, height: 10, rx: 2, fill: color }),
+            el('path', { d: 'M8 10V7a4 4 0 0 1 8 0v3', stroke: color, strokeWidth: 2, fill: 'none' }),
+            el('circle', { cx: 12, cy: 15, r: 1.6, fill: '#fff' })
+        );
+    };
+
     var Label = function () {
         return el('span', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' } },
             el('span', null, title),
-            el('span', { style: { display: 'inline-flex', alignItems: 'center' } }, iconRow(theme === 'sade' ? 20 : (theme === 'vurgulu' ? 28 : 24)))
+            el('span', { style: { display: 'inline-flex', alignItems: 'center' } }, iconRow(iconHeight(theme)))
         );
     };
 
@@ -44,6 +60,26 @@
         }
         if (theme === 'sade') {
             return el('div', { style: { padding: '8px 0', color: '#555' } }, note);
+        }
+        if (theme === 'modern') {
+            return el('div', { style: { background: '#fff', border: '1px solid #eceef1', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 10px rgba(17,24,39,0.06)' } },
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' } },
+                    lockEl('#12b76a', 18),
+                    el('span', { style: { fontWeight: 600 } }, __('3D Secure ile guvenli odeme', 'QNBPay'))
+                ),
+                el('div', { style: { color: '#667085', marginBottom: '12px' } }, note),
+                el('div', null, iconRow(22))
+            );
+        }
+        if (theme === 'kurumsal') {
+            return el('div', { style: { border: '1px solid #d9dee6', borderLeft: '4px solid #1f3a5f', borderRadius: '4px', background: '#fff' } },
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px' } },
+                    lockEl('#1f3a5f', 16),
+                    el('span', { style: { fontWeight: 600, color: '#1f3a5f' } }, __('QNB ile guvenli odeme', 'QNBPay'))
+                ),
+                el('div', { style: { padding: '0 16px 12px', color: '#555' } }, note),
+                el('div', { style: { borderTop: '1px solid #eef1f5', padding: '10px 16px', display: 'flex', justifyContent: 'flex-end' } }, iconRow(20))
+            );
         }
         return el('div', { style: { background: '#f7f8fa', border: '1px solid #e6e8eb', borderRadius: '8px', padding: '12px 14px', color: '#555' } }, note);
     };

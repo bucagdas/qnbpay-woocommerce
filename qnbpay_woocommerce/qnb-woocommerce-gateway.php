@@ -3,7 +3,7 @@
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.0.4
+    Version: 1.1.0
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5
@@ -18,6 +18,23 @@
     */
 if (!defined('ABSPATH')) {
     exit;
+}
+
+/**
+ * Write to the WooCommerce log channel "qnbpay" (WooCommerce > Status > Logs),
+ * so store owners can read diagnostics from wp-admin without shell access.
+ * Falls back to error_log if WooCommerce logging is unavailable.
+ *
+ * @param string $message
+ * @param string $level   emergency|alert|critical|error|warning|notice|info|debug
+ */
+function qnbpay_log($message, $level = 'error')
+{
+    if (function_exists('wc_get_logger')) {
+        wc_get_logger()->log($level, $message, array('source' => 'qnbpay'));
+        return;
+    }
+    error_log('QNBpay: ' . $message);
 }
 
 // Automatic updates from the GitHub repo releases (vendored plugin-update-checker).
@@ -49,9 +66,6 @@ add_action('woocommerce_blocks_loaded', function () {
     });
 });
 add_action('wp_ajax_delete_qnb_card', 'delete_qnb_card');
-add_action('wp_ajax_get_admin_installment', 'get_admin_installment');
-
-add_action('wp_ajax_nopriv_get_admin_installment', 'get_admin_installment');
 function qnb_pos()
 {
     if (!class_exists('WC_Payment_Gateway')) {
@@ -130,12 +144,51 @@ function getCurl($url, $method, $array, $header = [])
 add_action('admin_enqueue_scripts', 'qnbpay_admin_settings_assets');
 function qnbpay_admin_settings_assets($hook)
 {
+    if (!current_user_can('manage_woocommerce')) {
+        return;
+    }
     $tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
     $section = isset($_GET['section']) ? strtolower(sanitize_text_field(wp_unslash($_GET['section']))) : '';
     if ($tab !== 'checkout' || $section !== 'qnbpay_sanalpos') {
         return;
     }
-    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.0.3', true);
+    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.1.0', true);
+
+    // Provide the backed-up real credentials (if any) so the settings page can
+    // offer a "restore real keys" action after the sandbox test keys are loaded.
+    $backup = get_option('qnbpay_live_keys_backup', array());
+    $live = null;
+    if (is_array($backup) && !empty($backup['merchant_key'])) {
+        $live = array(
+            'merchant_key' => isset($backup['merchant_key']) ? (string) $backup['merchant_key'] : '',
+            'app_key'      => isset($backup['app_key']) ? (string) $backup['app_key'] : '',
+            'app_secret'   => isset($backup['app_secret']) ? (string) $backup['app_secret'] : '',
+            'merchant_id'  => isset($backup['merchant_id']) ? (string) $backup['merchant_id'] : '',
+            'environment'  => isset($backup['environment']) ? (string) $backup['environment'] : 'no',
+        );
+    }
+    // Build a live preview of each theme, reusing the real checkout renderers so
+    // the panel preview matches the storefront exactly. The title text is filled
+    // in by JS from the Title field (kept live).
+    $previews = array();
+    $gateways = (function_exists('WC') && WC()->payment_gateways()) ? WC()->payment_gateways()->payment_gateways() : array();
+    $gw = isset($gateways['QNBPay_sanalpos']) ? $gateways['QNBPay_sanalpos'] : null;
+    if ($gw && class_exists('QNBPay_sanalpos')) {
+        foreach (QNBPay_sanalpos::qnbpay_theme_keys() as $t) {
+            $h = QNBPay_sanalpos::qnbpay_theme_icon_height($t);
+            $label = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">'
+                . '<strong class="qnb-preview-title" style="font-weight:600;color:#1d2327;"></strong>'
+                . '<span style="display:inline-flex;align-items:center;">' . $gw->card_icons_html($h) . '</span>'
+                . '</div>';
+            $previews[$t] = $label . $gw->render_hosted_note($t);
+        }
+    }
+    wp_localize_script('qnbpay-admin-settings', 'qnbpayAdminData', array(
+        'liveBackup'      => $live,
+        'testMerchantKey' => class_exists('QNBPay_sanalpos') ? QNBPay_sanalpos::QNB_TEST_MERCHANT_KEY : '',
+        'previews'        => $previews,
+        'defaultTitle'    => __('Banka/Kredi Karti ile Ode', 'qnb'),
+    ));
 }
 
 add_action('admin_notices', 'qnbpay_settings_connection_notice');
