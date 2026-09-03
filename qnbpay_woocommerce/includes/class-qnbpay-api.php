@@ -17,6 +17,9 @@ class QNBPay_Api
     /** @var array gateway settings (woocommerce_QNBPay_sanalpos_settings) */
     private $settings;
 
+    /** @var string last transport/HTTP error, for on-screen diagnostics */
+    public $last_error = '';
+
     public function __construct($settings = null)
     {
         $this->settings = is_array($settings)
@@ -74,6 +77,7 @@ class QNBPay_Api
         if ($authorize) {
             $token = $this->get_token();
             if ($token === '') {
+                if ($this->last_error === '') { $this->last_error = 'Token alinamadi (kimlik bilgileri ya da QNB erisimi).'; }
                 return null;
             }
             $headers['Authorization'] = 'Bearer ' . $token;
@@ -84,6 +88,7 @@ class QNBPay_Api
             'timeout' => 30,
         ));
         if (is_wp_error($res)) {
+            $this->last_error = $res->get_error_message();
             error_log('QNBpay API ' . $path . ': ' . $res->get_error_message());
             return null;
         }
@@ -202,5 +207,55 @@ class QNBPay_Api
             'hash_key'               => $hash,
             'include_pending_status' => true,
         ), true);
+    }
+
+    /**
+     * Diagnostic: try a token call and report whether QNB is reachable and what the
+     * merchant account allows (is_3d). Used by the settings-page connection notice.
+     * Returns array{ok:bool, message:string, is_3d?:mixed}.
+     */
+    public function test_connection()
+    {
+        $this->last_error = '';
+        $resp = $this->post('/api/token', array(
+            'app_id'     => $this->option('app_key'),
+            'app_secret' => $this->option('app_secret'),
+        ));
+        if (!is_object($resp)) {
+            return array('ok' => false, 'message' => $this->last_error !== '' ? $this->last_error : 'QNB sunucusuna baglanilamadi.');
+        }
+        $code = isset($resp->status_code) ? (string) $resp->status_code : '';
+        if ($code !== '100' || !isset($resp->data->token)) {
+            $desc = isset($resp->status_description) ? $resp->status_description : ('status_code ' . $code);
+            return array('ok' => false, 'message' => 'QNB kimlik/token reddetti: ' . $desc);
+        }
+        $is3d = isset($resp->data->is_3d) ? $resp->data->is_3d : null;
+
+        // Probe the actual operation that fails at checkout: a throwaway purchase/link.
+        $this->last_error = '';
+        $probe = $this->post('/purchase/link', array(
+            'merchant_key'  => $this->option('merchant_key'),
+            'currency_code' => 'TRY',
+            'invoice'       => array(
+                'invoice_id'          => 'PROBE' . time() . 'WOO0',
+                'invoice_description' => 'baglanti testi',
+                'total'               => '1.00',
+                'return_url'          => home_url('/'),
+                'cancel_url'          => home_url('/'),
+                'response_method'     => 'POST',
+                'items'               => array(array('name' => 'test', 'price' => '1.00', 'quantity' => 1, 'description' => 'test')),
+            ),
+            'name'          => 'Test',
+            'surname'       => 'Baglanti',
+        ), true);
+        if (!is_object($probe)) {
+            return array('ok' => false, 'is_3d' => $is3d, 'message' => 'Token alindi ama purchase/link yanit vermedi: ' . ($this->last_error !== '' ? $this->last_error : 'bilinmeyen'));
+        }
+        $pcode = isset($probe->status_code) ? (string) $probe->status_code : '';
+        if ($pcode !== '100' || empty($probe->link)) {
+            $pdesc = isset($probe->status_description) ? $probe->status_description : ('status_code ' . $pcode);
+            return array('ok' => false, 'is_3d' => $is3d, 'message' => 'purchase/link reddedildi: ' . $pdesc . ' (kod ' . $pcode . ')');
+        }
+        return array('ok' => true, 'is_3d' => $is3d, 'message' => 'baglanti ve purchase/link OK');
     }
 }

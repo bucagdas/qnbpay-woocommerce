@@ -338,9 +338,9 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
             return array('result' => 'success', 'redirect' => $resp->link);
         }
 
-        $desc = (is_object($resp) && isset($resp->status_description)) ? (string) $resp->status_description : '';
-        error_log('QNBpay purchase/link failed for order ' . $order_id . ' code=' . (is_object($resp) && isset($resp->status_code) ? $resp->status_code : 'n/a'));
-        wc_add_notice(__('QNBpay odemesi baslatilamadi. Lutfen tekrar deneyin.', 'QNBPay'), 'error');
+        $desc = (is_object($resp) && isset($resp->status_description)) ? (string) $resp->status_description : $api->last_error;
+        error_log('QNBpay purchase/link failed for order ' . $order_id . ' code=' . (is_object($resp) && isset($resp->status_code) ? $resp->status_code : 'n/a') . ' reason=' . $desc);
+        wc_add_notice(__('QNBpay odemesi baslatilamadi. Lutfen tekrar deneyin.', 'QNBPay') . ($desc !== '' ? ' (' . esc_html($desc) . ')' : ''), 'error');
         return array('result' => 'failure');
     }
 

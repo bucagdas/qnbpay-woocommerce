@@ -3,7 +3,7 @@
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.0.2
+    Version: 1.0.3
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5
@@ -122,4 +122,50 @@ function getCurl($url, $method, $array, $header = [])
     $response = curl_exec($curl);
     curl_close($curl);
     return json_decode($response);
+}
+
+
+// Settings-page diagnostic: show whether the server can reach QNB and what the
+// account allows (is_3d). Guarded so it can never break the admin page.
+add_action('admin_enqueue_scripts', 'qnbpay_admin_settings_assets');
+function qnbpay_admin_settings_assets($hook)
+{
+    $tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
+    $section = isset($_GET['section']) ? strtolower(sanitize_text_field(wp_unslash($_GET['section']))) : '';
+    if ($tab !== 'checkout' || $section !== 'qnbpay_sanalpos') {
+        return;
+    }
+    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.0.3', true);
+}
+
+add_action('admin_notices', 'qnbpay_settings_connection_notice');
+function qnbpay_settings_connection_notice()
+{
+    if (!is_admin() || !current_user_can('manage_woocommerce')) {
+        return;
+    }
+    $tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
+    $section = isset($_GET['section']) ? strtolower(sanitize_text_field(wp_unslash($_GET['section']))) : '';
+    if ($tab !== 'checkout' || $section !== 'qnbpay_sanalpos') {
+        return;
+    }
+    if (!class_exists('QNBPay_Api')) {
+        return;
+    }
+    try {
+        $api = new QNBPay_Api();
+        if ($api->option('app_key') === '' || $api->option('app_secret') === '') {
+            return;
+        }
+        $mode = $api->is_sandbox() ? 'test' : 'canli';
+        $t = $api->test_connection();
+        if (!empty($t['ok'])) {
+            $is3d = isset($t['is_3d']) ? (string) $t['is_3d'] : '';
+            echo '<div class="notice notice-success"><p><strong>QNBPay (' . esc_html($mode) . '):</strong> QNB baglantisi ve odeme baslatma testi basarili. Hesap is_3d=' . esc_html($is3d) . '.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p><strong>QNBPay (' . esc_html($mode) . ') sorun:</strong> ' . esc_html($t['message']) . '</p></div>';
+        }
+    } catch (\Throwable $e) {
+        // never break the admin page
+    }
 }
