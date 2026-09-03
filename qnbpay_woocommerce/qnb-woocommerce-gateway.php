@@ -12,6 +12,14 @@ if (!defined('ABSPATH')) {
 }
 
 add_action('plugins_loaded', 'qnb_pos', 0);
+// REFACTOR: declare HPOS (custom order tables) compatibility. The active hosted flow and
+// the verified return/webhook handler read and write order data via wc_get_order()/$order,
+// so the plugin is compatible with High-Performance Order Storage.
+add_action('before_woocommerce_init', function () {
+    if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
 add_action('init', 'my_custom_public_page');
 add_action('wp_ajax_delete_qnb_card', 'delete_qnb_card');
 add_action('wp_ajax_get_installment', 'get_installment');
@@ -260,8 +268,22 @@ function qnbpay_settle_from_notification($order, $invoice_id, $payment_status, $
     $is_preauth = (stripos((string) $transaction_type, 'pre') !== false)
         || (isset($status->transaction_type) && stripos((string) $status->transaction_type, 'pre') !== false);
     if ($is_preauth) {
-        $order->update_status('on-hold', sprintf(__('QNBpay: on provizyon (Pre-Auth) basarili, tutar bloke. Auth zorunlu, cekim yapilmadi. Referans: %s', 'QNBPay'), $ref));
-        return 'preauth';
+        // REFACTOR: capture the pre-authorised amount via confirmPayment (status 1),
+        // then settle. If capture fails, hold the order and note it (funds stay blocked
+        // and QNB releases them after 20 days).
+        $api = new QNBPay_Api();
+        $cap = $api->confirm_payment($invoice_id, 1, number_format((float) $order->get_total(), 2, '.', ''));
+        $cap_ok = is_object($cap) && isset($cap->status_code) && in_array((string) $cap->status_code, array('100', '101'), true);
+        if (!$cap_ok) {
+            $order->update_status('on-hold', sprintf(__('QNBpay: on provizyon basarili ama confirmPayment ile cekim yapilamadi. Referans: %s', 'QNBPay'), $ref));
+            return 'preauth';
+        }
+        $order->payment_complete($ref);
+        $order->add_order_note(sprintf(__('QNBpay: on provizyon confirmPayment ile cekildi (%s). Referans: %s', 'QNBPay'), $context, $ref));
+        if (function_exists('WC') && WC()->cart) {
+            WC()->cart->empty_cart();
+        }
+        return true;
     }
 
     // Auth: capture confirmed by checkstatus -> settle (this replaces the old dead payment_complete()).
@@ -498,7 +520,12 @@ function my_custom_public_page()
 
 function get_installment()
 {
-
+    // REFACTOR/BULGULAR #5: the hosted /purchase/link flow performs installment lookup on
+    // QNB's page from the BIN, so the full card number never reaches this endpoint. This
+    // legacy admin-ajax handler (which forwarded the full PAN to getpos) is disabled. Kept
+    // for one-commit rollback with the on-site card form.
+    wp_send_json(array('data' => '', 'pos_id' => '', 'pos_amt' => '', 'installments_number' => '', 'hash_key' => ''));
+    return;
     if (!empty($_POST['cc_number'])) {
         global $woocommerce;
 

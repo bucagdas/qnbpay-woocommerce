@@ -89,4 +89,101 @@ class QNBPay_Api
         }
         return json_decode(wp_remote_retrieve_body($res));
     }
+
+    /**
+     * REFACTOR (hosted flow): create a hosted-page payment and return the response
+     * ({link, order_id, status_code}). Card data never touches our server (PCI SAQ A);
+     * the buyer enters the card, picks installments and sees the amount on QNB's page.
+     * $invoice_id must be unique and encode the order as "<rand>WOO<order_id>".
+     */
+    public function purchase_link(WC_Order $order, $invoice_id, $return_url, $cancel_url)
+    {
+        $total = number_format((float) $order->get_total(), 2, '.', '');
+        $items = array();
+        foreach ($order->get_items() as $item) {
+            $qty = max(1, (int) $item->get_quantity());
+            // per-unit price so sum(price*qty) == order total (QNB status_code 13 otherwise)
+            $unit = number_format(((float) $item->get_total()) / $qty, 2, '.', '');
+            $items[] = array(
+                'name'        => $item->get_name(),
+                'price'       => $unit,
+                'quantity'    => $qty,
+                'description' => $item->get_name(),
+            );
+        }
+        // reconcile any rounding drift (shipping, fees, coupons) into a single line so the
+        // items sum matches the order total exactly.
+        $sum = 0.0;
+        foreach ($items as $it) { $sum += (float) $it['price'] * (int) $it['quantity']; }
+        $diff = round((float) $total - $sum, 2);
+        if (abs($diff) >= 0.01) {
+            $items[] = array(
+                'name'        => __('Diger (kargo/vergi/indirim)', 'QNBPay'),
+                'price'       => number_format($diff, 2, '.', ''),
+                'quantity'    => 1,
+                'description' => __('Toplam duzeltme', 'QNBPay'),
+            );
+        }
+        if (empty($items)) {
+            $items[] = array('name' => 'Order', 'price' => $total, 'quantity' => 1, 'description' => 'Order');
+        }
+
+        $body = array(
+            'merchant_key'  => $this->option('merchant_key'),
+            'currency_code' => $order->get_currency(),
+            'invoice'       => array(
+                'invoice_id'          => $invoice_id,
+                'invoice_description' => sprintf(__('Siparis #%s', 'QNBPay'), $order->get_order_number()),
+                'total'               => $total,
+                'return_url'          => $return_url,
+                'cancel_url'          => $cancel_url,
+                'response_method'     => 'POST',
+                'items'               => $items,
+            ),
+            'name'          => $order->get_billing_first_name(),
+            'surname'       => $order->get_billing_last_name(),
+        );
+        $txn = $this->option('transaction_type');
+        if ($txn !== '') {
+            $body['invoice']['transaction_type'] = $txn; // Auth / PreAuth
+        }
+        $webhook = $this->option('sale_webhook_key');
+        if ($webhook !== '') {
+            $body['invoice']['sale_web_hook_key'] = $webhook;
+        }
+        return $this->post('/purchase/link', $body, true);
+    }
+
+    /**
+     * AES-256-CBC hash bundle used by QNB (same scheme as the payment hash; preserved
+     * from the plugin). Plaintext $data is the pipe-joined field list per endpoint.
+     */
+    public function generate_hash($data)
+    {
+        $iv = substr(sha1((string) mt_rand()), 0, 16);
+        $salt = substr(sha1((string) mt_rand()), 0, 4);
+        $salt_with_password = hash('sha256', sha1($this->option('app_secret')) . $salt);
+        $encrypted = openssl_encrypt((string) $data, 'aes-256-cbc', $salt_with_password, 0, $iv);
+        return str_replace('/', '__', "$iv:$salt:$encrypted");
+    }
+
+    /**
+     * REFACTOR: capture (or cancel) a pre-authorised payment. status 1 = capture,
+     * 2 = cancel. Payload hash is "merchant_key|invoice_id|status". A PreAuth left
+     * uncaptured is released by QNB after 20 days.
+     */
+    public function confirm_payment($invoice_id, $status, $total = null)
+    {
+        $hash = $this->generate_hash($this->option('merchant_key') . '|' . $invoice_id . '|' . $status);
+        $body = array(
+            'invoice_id'   => $invoice_id,
+            'merchant_key' => $this->option('merchant_key'),
+            'status'       => (int) $status,
+            'hash_key'     => $hash,
+        );
+        if ($total !== null) {
+            $body['total'] = $total;
+        }
+        return $this->post('/api/confirmPayment', $body, true);
+    }
 }
