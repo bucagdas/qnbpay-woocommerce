@@ -41,7 +41,6 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         }
 
         // further check of SSL if you want
-        add_action('admin_notices', [$this, 'do_ssl_check']);
         add_action('wp_enqueue_scripts', array($this, 'payment_scripts'));
 
         // Save settings
