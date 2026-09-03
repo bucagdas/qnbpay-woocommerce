@@ -320,7 +320,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
             $this->is_3d = $result->data->is_3d;
 
-            echo "<input type='hidden' name='qnb_token' class='qnb_token' id='qnb_token' value='" . $result->data->token . "'/>";
+            // BULGULAR #4: the QNB bearer token is no longer emitted to the browser.
 
             if (!empty(WC()->cart->get_cart())) {
                 foreach (WC()->cart->get_cart() as $cart_item) {
@@ -354,7 +354,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
                 }
             }
         } else {
-            echo "<input type='hidden' name='qnb_token' class='qnb_token' id='qnb_token' value=''/>";
+            // BULGULAR #4: no token in the DOM.
         }
 
         echo "<input type='hidden' name='qnb_3d' class='qnb_3d' id='qnb_3d' value='" . $this->is_3d . "'/>";
@@ -825,7 +825,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
             'invoice_id' => $order,
             'is_3d' => $is3d,
             'is_2d_card' => $_POST['stored_card'] == 1 ? 'yes' : 'no',
-            'token' => $_POST['qnb_token'],
+            'token' => (new QNBPay_Api())->get_token(), // BULGULAR #4: server-side token
             'invoice_description' => $order_id . " ödemesi",
             'transaction_type' => $this->get_option('transaction_type'),
             'total' => number_format(WC()->cart->total, 2, ".", ""),

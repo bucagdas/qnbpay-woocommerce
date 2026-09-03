@@ -25,6 +25,7 @@ function qnb_pos()
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
+    include_once __DIR__ . '/includes/class-qnbpay-api.php'; // REFACTOR: QNB API layer
     include_once 'qnb-woocommerce.php';
     include_once 'qnb-woocommerce-recurring.php';
     // class add it too WooCommerce
@@ -529,7 +530,8 @@ function get_installment()
 
         $pos_post['is_comission_from_user'] = $qnb_pay->get_option('installment_type') == "yes" ? 1 : 0;
         $pos_post['is_single_payment_allowed'] = true;
-        $headers = ['Accept: application/json', 'Content-Type: application/json', "Authorization: Bearer {$_POST['qnb_token']}"];
+        $qnb_api = new QNBPay_Api();
+        $headers = ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $qnb_api->get_token()]; // BULGULAR #4: token fetched server-side, not from the browser
 
         $ch = curl_init();
 

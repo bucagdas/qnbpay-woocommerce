@@ -28,7 +28,7 @@ jQuery(document).ready(function(){
 
                var formData = jQuery("#wc-QNBPay_sanalpos-cc-form").serialize();
 
-               var token = jQuery('#qnb_token').val();
+               var token = ''; // BULGULAR #4: token is fetched server-side by the getpos handler
 
                ajaxRequest(woocommerce_params.ajax_url, formData, token);
 
