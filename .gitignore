@@ -1,0 +1,7 @@
+# local test/evidence artifacts, never committed
+.playwright-mcp/
+*.png
+*.zip
+*.diff
+*.env
+.qnb-sandbox.env
