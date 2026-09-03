@@ -1,10 +1,10 @@
 <?php
 /**
- * QNBPay_Webhook — return + webhook settlement layer (third of the three layers:
+ * QNBPay_Webhook: return + webhook settlement layer (third of the three layers:
  * QNBPay_Api, gateway, webhook).
  *
  * The sale webhook (POST /?webhook=1) and the hosted/3D return both land here. Nothing
- * is settled on the notification alone: an incoming hash_key is validated (BULGULAR #1)
+ * is settled on the notification alone: an incoming hash_key is validated
  * and /api/checkstatus confirms the money server-side (via QNBPay_Api) before
  * payment_complete(). Reads GET and POST (QNB returns with response_method=POST).
  */
@@ -132,7 +132,7 @@ class QNBPay_Webhook
         $is_preauth = (stripos((string) $transaction_type, 'pre') !== false)
             || (isset($status->transaction_type) && stripos((string) $status->transaction_type, 'pre') !== false);
         if ($is_preauth) {
-            // Capture the pre-authorised amount, then settle (BULGULAR D3).
+            // Capture the pre-authorised amount, then settle.
             $cap = $api->confirm_payment($invoice_id, 1, number_format((float) $order->get_total(), 2, '.', ''));
             $cap_ok = is_object($cap) && isset($cap->status_code) && in_array((string) $cap->status_code, array('100', '101'), true);
             if (!$cap_ok) {

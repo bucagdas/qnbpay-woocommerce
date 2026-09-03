@@ -29,7 +29,6 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         $this->icon = null;
         $this->has_fields = true;
         // support default form with credit card
-        //$this->supports = ['default_credit_card_form'];
         // setting defines
         $this->init_form_fields();
         // load time variable setting
@@ -285,10 +284,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
     public function payment_fields()
     {
-        // REFACTOR (hosted flow): no card fields on our checkout. The buyer is sent to
-        // QNB's secure page to enter the card, choose installments and confirm the amount.
-        // The legacy on-site card form below is left disabled (unreachable) for one-commit
-        // rollback until the hosted amount is confirmed on the live portal.
+        // No card fields here: the buyer enters the card on QNB's hosted page.
         if ($description = $this->get_description()) {
             echo wpautop(wptexturize($description));
         }
@@ -319,17 +315,9 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
     public function process_payment($order_id)
     {
-        // ===================================================================
-        // REFACTOR (hosted /purchase/link flow): the buyer enters the card,
-        // picks installments and sees the amount on QNB's PCI-DSS SAQ A page.
-        // No card data (PAN/CVV) touches our server, session, meta or logs.
-        // Reads only from $order (BULGULAR #8). Settlement happens on return via
-        // the verified handler (BULGULAR #1). The legacy on-site paySmart3D form
-        // below is intentionally left in place but unreachable, so this can be
-        // rolled back in a single commit until the hosted flow is confirmed on
-        // the live portal.
-        // ===================================================================
-        $order = wc_get_order($order_id); // HPOS-safe
+        // Hosted /purchase/link: create the order, get the redirect link, send the
+        // buyer to QNB's page. No card data reaches our server. Reads only from $order.
+        $order = wc_get_order($order_id);
         $invoice_id = md5(microtime()) . 'WOO' . $order_id;
         $order->update_meta_data('_qnbpay_invoice_id', $invoice_id);
         $order->save();

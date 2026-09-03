@@ -1,5 +1,5 @@
 /**
- * QNBpay — WooCommerce Cart/Checkout Blocks integration (compile-free).
+ * QNBpay: WooCommerce Cart/Checkout Blocks integration (compile-free).
  *
  * The hosted /purchase/link flow means there are NO card fields here: the block only
  * shows a short note and registers the method so it is selectable in the Checkout block.

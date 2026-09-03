@@ -1,6 +1,6 @@
 <?php
 /**
- * QNBPay_Blocks — Cart/Checkout Blocks payment method integration.
+ * QNBPay_Blocks: Cart/Checkout Blocks payment method integration.
  *
  * Registers the gateway for the Checkout block so it is selectable there (it was invisible
  * before: the block showed "no payment methods available"). No card fields are rendered;

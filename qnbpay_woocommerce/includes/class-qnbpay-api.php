@@ -1,12 +1,12 @@
 <?php
 /**
- * QNBPay_Api — QNB (Sipay) REST client layer.
+ * QNBPay_Api: QNB (Sipay) REST client layer.
  *
- * REFACTOR (three-layer separation): this owns the QNB API logic (endpoints,
+ * This class owns the QNB API logic (endpoints,
  * order, hash generation, field names, is_3d modes). The logic is preserved from
  * the original plugin; it is only reorganized here so the gateway and webhook
  * layers never talk to curl directly. The bearer token is fetched and cached
- * SERVER-SIDE and is never emitted to the browser (BULGULAR #4).
+ * SERVER-SIDE and is never emitted to the browser.
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -43,7 +43,7 @@ class QNBPay_Api
 
     /**
      * Bearer token, cached server-side (valid ~2h at QNB; cached under that).
-     * BULGULAR #4: the token is never printed to HTML or sent to JS.
+     * The token is never printed to HTML or sent to JS.
      */
     public function get_token()
     {
@@ -64,9 +64,9 @@ class QNBPay_Api
     }
 
     /**
-     * POST JSON to a QNB endpoint via wp_remote_post (TLS verified; BULGULAR #6).
+     * POST JSON to a QNB endpoint via wp_remote_post (TLS verified; ).
      * Pass $authorize=true to attach the cached bearer token. Never send Accept/
-     * Content-Type twice (BULGULAR #11: the gateway WAF rejected duplicates).
+     * Content-Type twice (the gateway WAF rejected duplicates).
      */
     public function post($path, array $body, $authorize = false)
     {
@@ -91,7 +91,7 @@ class QNBPay_Api
     }
 
     /**
-     * REFACTOR (hosted flow): create a hosted-page payment and return the response
+     * Create a hosted-page payment and return the response
      * ({link, order_id, status_code}). Card data never touches our server (PCI SAQ A);
      * the buyer enters the card, picks installments and sees the amount on QNB's page.
      * $invoice_id must be unique and encode the order as "<rand>WOO<order_id>".
@@ -155,7 +155,7 @@ class QNBPay_Api
     }
 
     /**
-     * AES-256-CBC hash bundle used by QNB (same scheme as the payment hash; preserved
+     * AES-256-CBC hash bundle used by QNB (same scheme as the payment hash, preserved
      * from the plugin). Plaintext $data is the pipe-joined field list per endpoint.
      */
     public function generate_hash($data)
@@ -168,7 +168,7 @@ class QNBPay_Api
     }
 
     /**
-     * REFACTOR: capture (or cancel) a pre-authorised payment. status 1 = capture,
+     * Capture or cancel a pre-authorised payment. status 1 = capture,
      * 2 = cancel. Payload hash is "merchant_key|invoice_id|status". A PreAuth left
      * uncaptured is released by QNB after 20 days.
      */
@@ -188,7 +188,7 @@ class QNBPay_Api
     }
 
     /**
-     * REFACTOR (BULGULAR #1/#11): transaction status from QNB, the authority for
+     * Transaction status from QNB, the authority for
      * settlement. Payload hash is "invoice_id|merchant_key"; include_pending_status is a
      * JSON boolean; post() sends the body once and the auth/accept headers once (the three
      * bugs that made the old checkStatus() return HTTP 400).

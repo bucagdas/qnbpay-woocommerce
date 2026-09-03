@@ -2,19 +2,26 @@
 /*
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://www.qnbpay.com.tr/
-    Description: Woocommerce için QNBPay Entegrasyonu
-    Domain Path: /i18n/languages/
+    Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
+    Version: 1.0.0
+    Author: bucagdas
+    Requires Plugins: woocommerce
+    Requires at least: 6.5
+    Tested up to: 7.1
+    Requires PHP: 7.4
+    WC requires at least: 8.0
+    WC tested up to: 11.0
     Text Domain: QNBPay
-
+    Domain Path: /i18n/languages/
+    License: GPL-2.0-or-later
+    License URI: https://www.gnu.org/licenses/gpl-2.0.html
     */
 if (!defined('ABSPATH')) {
     exit;
 }
 
 add_action('plugins_loaded', 'qnb_pos', 0);
-// REFACTOR: declare HPOS (custom order tables) compatibility. The active hosted flow and
-// the verified return/webhook handler read and write order data via wc_get_order()/$order,
-// so the plugin is compatible with High-Performance Order Storage.
+// Declare High-Performance Order Storage compatibility (all order access is via wc_get_order/$order).
 add_action('before_woocommerce_init', function () {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
@@ -22,8 +29,7 @@ add_action('before_woocommerce_init', function () {
     }
 });
 
-// REFACTOR (Blocks): register the Cart/Checkout Blocks payment method integration so the
-// gateway is selectable in the Checkout block (classic and blocks share the hosted server flow).
+// Register the Cart/Checkout Blocks payment method integration.
 add_action('woocommerce_blocks_loaded', function () {
     if (!class_exists(\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class)) {
         return;
@@ -39,12 +45,11 @@ add_action('wp_ajax_get_admin_installment', 'get_admin_installment');
 add_action('wp_ajax_nopriv_get_admin_installment', 'get_admin_installment');
 function qnb_pos()
 {
-    //if condition use to do nothin while WooCommerce is not installed
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
-    include_once __DIR__ . '/includes/class-qnbpay-api.php'; // REFACTOR: QNB API layer
-    include_once __DIR__ . '/includes/class-qnbpay-webhook.php'; // REFACTOR: webhook/settlement layer
+    include_once __DIR__ . '/includes/class-qnbpay-api.php';
+    include_once __DIR__ . '/includes/class-qnbpay-webhook.php';
     QNBPay_Webhook::init();
     include_once 'qnb-woocommerce.php';
     include_once 'qnb-woocommerce-recurring.php';
@@ -60,9 +65,7 @@ function qnb_pos()
 
 function delete_qnb_card()
 {
-    // SECURITY (BULGULAR #3): previously ANY logged-in user could delete ANY customer's saved
-    // card by its token (no nonce, no ownership check). Require a valid nonce, an authenticated
-    // user, and scope the delete to the current customer's own rows.
+    // Require a nonce, login, and row ownership so a member cannot delete another customer's card.
     check_ajax_referer('qnbpay_ajax', 'nonce');
     if (!is_user_logged_in()) {
         wp_send_json_error('unauthorized', 403);
@@ -104,7 +107,7 @@ function getCurl($url, $method, $array, $header = [])
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_POSTFIELDS => json_encode($array),
-        CURLOPT_VERBOSE => false, // BULGULAR #6/#7: verbose leaked bearer token to logs
+        CURLOPT_VERBOSE => false, // verbose would dump the bearer token to logs
     ));
 
     $response = curl_exec($curl);
