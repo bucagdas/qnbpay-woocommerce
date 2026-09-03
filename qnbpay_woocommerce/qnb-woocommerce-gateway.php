@@ -1,9 +1,9 @@
 <?php
 /*
     Plugin Name: QNBPay SanalPos
-    Plugin URI: https://www.qnbpay.com.tr/
+    Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.0.1
+    Version: 1.0.2
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5
@@ -19,6 +19,15 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Automatic updates from the GitHub repo releases (vendored plugin-update-checker).
+require_once __DIR__ . '/lib/plugin-update-checker/plugin-update-checker.php';
+$qnbpay_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+    'https://github.com/bucagdas/qnbpay-woocommerce/',
+    __FILE__,
+    'qnbpay_woocommerce'
+);
+$qnbpay_update_checker->getVcsApi()->enableReleaseAssets();
 
 add_action('plugins_loaded', 'qnb_pos', 0);
 // Declare High-Performance Order Storage compatibility (all order access is via wc_get_order/$order).
