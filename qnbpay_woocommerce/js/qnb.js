@@ -55,7 +55,7 @@ jQuery(document).on('click', '#button-delete', function(){
     jQuery.ajax({
         url: woocommerce_params.ajax_url + '?action=delete_qnb_card',
         type: 'POST',
-        data: {card:jQuery('#input-card-choice').val()},
+        data: {card:jQuery('#input-card-choice').val(), nonce: (window.qnb_var ? qnb_var.nonce : '')}, // BULGULAR #3: send delete-card nonce
         success: function (data, textStatus, jQxhr) {
             location.reload()
 
