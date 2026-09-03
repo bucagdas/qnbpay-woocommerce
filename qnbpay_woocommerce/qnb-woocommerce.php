@@ -285,7 +285,21 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
     public function payment_fields()
     {
-
+        // REFACTOR (hosted flow): no card fields on our checkout. The buyer is sent to
+        // QNB's secure page to enter the card, choose installments and confirm the amount.
+        // The legacy on-site card form below is left disabled (unreachable) for one-commit
+        // rollback until the hosted amount is confirmed on the live portal.
+        if ($description = $this->get_description()) {
+            echo wpautop(wptexturize($description));
+        }
+        echo '<div class="qnbpay-hosted-note" style="padding:8px 0;color:#333;">'
+            . esc_html__('Odemenizi QNB\'nin guvenli odeme sayfasinda tamamlayacaksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay')
+            . '</div>';
+        return;
+        // ------------------------------------------------------------------
+        // LEGACY on-site card form below is DISABLED (unreachable).
+        // ------------------------------------------------------------------
+        if ($legacy_disabled = true) {
         if ($description = $this->get_description()) {
             echo wpautop(wptexturize($description));
         }
@@ -320,7 +334,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
             $this->is_3d = $result->data->is_3d;
 
-            echo "<input type='hidden' name='qnb_token' class='qnb_token' id='qnb_token' value='" . $result->data->token . "'/>";
+            // BULGULAR #4: the QNB bearer token is no longer emitted to the browser.
 
             if (!empty(WC()->cart->get_cart())) {
                 foreach (WC()->cart->get_cart() as $cart_item) {
@@ -354,7 +368,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
                 }
             }
         } else {
-            echo "<input type='hidden' name='qnb_token' class='qnb_token' id='qnb_token' value=''/>";
+            // BULGULAR #4: no token in the DOM.
         }
 
         echo "<input type='hidden' name='qnb_3d' class='qnb_3d' id='qnb_3d' value='" . $this->is_3d . "'/>";
@@ -579,6 +593,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
             echo '<div class="clear"></div></fieldset>';
         }
+        } // end legacy_disabled wrapper
     }
 
 
@@ -630,6 +645,46 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
     // Response handled for payment gateway
     public function process_payment($order_id)
     {
+        // ===================================================================
+        // REFACTOR (hosted /purchase/link flow): the buyer enters the card,
+        // picks installments and sees the amount on QNB's PCI-DSS SAQ A page.
+        // No card data (PAN/CVV) touches our server, session, meta or logs.
+        // Reads only from $order (BULGULAR #8). Settlement happens on return via
+        // the verified handler (BULGULAR #1). The legacy on-site paySmart3D form
+        // below is intentionally left in place but unreachable, so this can be
+        // rolled back in a single commit until the hosted flow is confirmed on
+        // the live portal.
+        // ===================================================================
+        $order = wc_get_order($order_id); // HPOS-safe
+        $invoice_id = md5(microtime()) . 'WOO' . $order_id;
+        $order->update_meta_data('_qnbpay_invoice_id', $invoice_id);
+        $order->save();
+
+        $api  = new QNBPay_Api();
+        $resp = $api->purchase_link(
+            $order,
+            $invoice_id,
+            $order->get_checkout_order_received_url(),
+            wc_get_checkout_url()
+        );
+
+        if (is_object($resp) && isset($resp->status_code) && (string) $resp->status_code === '100' && !empty($resp->link)) {
+            if (isset($resp->order_id)) {
+                $order->update_meta_data('_qnbpay_order_ref', sanitize_text_field((string) $resp->order_id));
+                $order->save();
+            }
+            $order->add_order_note(__('QNBpay guvenli odeme sayfasina yonlendirildi (hosted).', 'QNBPay'));
+            return array('result' => 'success', 'redirect' => $resp->link);
+        }
+
+        $desc = (is_object($resp) && isset($resp->status_description)) ? (string) $resp->status_description : '';
+        error_log('QNBpay purchase/link failed for order ' . $order_id . ' code=' . (is_object($resp) && isset($resp->status_code) ? $resp->status_code : 'n/a'));
+        wc_add_notice(__('QNBpay odemesi baslatilamadi. Lutfen tekrar deneyin.', 'QNBPay'), 'error');
+        return array('result' => 'failure');
+        // ------------------------------------------------------------------
+        // LEGACY on-site paySmart3D flow below is DISABLED (unreachable). Kept
+        // for one-commit rollback until the hosted amount is verified on live.
+        // ------------------------------------------------------------------
 
         global $woocommerce;
 
@@ -825,7 +880,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
             'invoice_id' => $order,
             'is_3d' => $is3d,
             'is_2d_card' => $_POST['stored_card'] == 1 ? 'yes' : 'no',
-            'token' => $_POST['qnb_token'],
+            'token' => (new QNBPay_Api())->get_token(), // BULGULAR #4: server-side token
             'invoice_description' => $order_id . " ödemesi",
             'transaction_type' => $this->get_option('transaction_type'),
             'total' => number_format(WC()->cart->total, 2, ".", ""),

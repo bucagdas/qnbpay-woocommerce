@@ -12,6 +12,14 @@ if (!defined('ABSPATH')) {
 }
 
 add_action('plugins_loaded', 'qnb_pos', 0);
+// REFACTOR: declare HPOS (custom order tables) compatibility. The active hosted flow and
+// the verified return/webhook handler read and write order data via wc_get_order()/$order,
+// so the plugin is compatible with High-Performance Order Storage.
+add_action('before_woocommerce_init', function () {
+    if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
 add_action('init', 'my_custom_public_page');
 add_action('wp_ajax_delete_qnb_card', 'delete_qnb_card');
 add_action('wp_ajax_get_installment', 'get_installment');
@@ -25,6 +33,9 @@ function qnb_pos()
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
+    include_once __DIR__ . '/includes/class-qnbpay-api.php'; // REFACTOR: QNB API layer
+    include_once __DIR__ . '/includes/class-qnbpay-webhook.php'; // REFACTOR: webhook/settlement layer
+    QNBPay_Webhook::init();
     include_once 'qnb-woocommerce.php';
     include_once 'qnb-woocommerce-recurring.php';
     // class add it too WooCommerce
@@ -128,148 +139,6 @@ function generateRefundHashKey($invoice_id, $merchant_key, $app_secret)
     $msg_encrypted_bundle = "$iv:$salt:$encrypted";
     $hash_key = str_replace('/', '__', $msg_encrypted_bundle);
     return $hash_key;
-}
-
-/**
- * SECURITY (BULGULAR #1): resolve the WooCommerce order from a QNBpay invoice_id of the
- * form "<rand>WOO<order_id>". Uses wc_get_order (HPOS-safe). Returns WC_Order or false.
- */
-function qnbpay_order_from_invoice($invoice_id)
-{
-    if (!is_string($invoice_id) || strpos($invoice_id, 'WOO') === false) {
-        return false;
-    }
-    $parts = explode('WOO', $invoice_id);
-    $order_id = absint(end($parts));
-    if (!$order_id) {
-        return false;
-    }
-    $order = wc_get_order($order_id);
-    return $order ? $order : false;
-}
-
-/**
- * SECURITY (BULGULAR #1): validate a QNBpay hash_key. It is NOT an HMAC; it is an
- * AES-256-CBC ciphertext bundled as "iv:salt:base64", with every '/' transported as '__'.
- * Documented inverse of generateHashKey; hash GENERATION is left unchanged.
- * Returns [status, total, invoice_id, order_id, currency_code] (empty strings on failure).
- */
-function qnbpay_validate_hash_key($hash_key, $app_secret)
-{
-    $status = $currency = '';
-    $total = $invoice_id = $order_id = '';
-    if (!is_string($hash_key) || $hash_key === '') {
-        return array($status, $total, $invoice_id, $order_id, $currency);
-    }
-    $hash_key = str_replace('__', '/', $hash_key);
-    $password = sha1($app_secret);
-    $components = explode(':', $hash_key);
-    if (count($components) > 2) {
-        $iv = $components[0];
-        $salt = hash('sha256', $password . $components[1]);
-        $decrypted = openssl_decrypt($components[2], 'aes-256-cbc', $salt, 0, $iv);
-        if ($decrypted !== false && strpos($decrypted, '|') !== false) {
-            list($status, $total, $invoice_id, $order_id, $currency) = array_pad(explode('|', $decrypted), 5, '');
-        }
-    }
-    return array($status, $total, $invoice_id, $order_id, $currency);
-}
-
-/**
- * SECURITY (BULGULAR #1): server-to-server confirmation. A redirect or webhook proves
- * nothing about the money; /api/checkstatus (merchant-credentialed) is the authority.
- * Returns the checkstatus response object when the invoice is confirmed paid AND its
- * amount/currency match the order, false otherwise.
- */
-function qnbpay_checkstatus_paid($invoice_id, $order)
-{
-    $status = checkStatus($invoice_id);
-    if (!is_object($status)) {
-        return false;
-    }
-    // checkstatus confirms with transaction_status ("COMPLETED"); some flows also return status_code 100.
-    $txn_status = isset($status->transaction_status) ? (string) $status->transaction_status : '';
-    $ok_code = isset($status->status_code) && ((string) $status->status_code === '100');
-    $ok_txn = (strcasecmp($txn_status, 'Completed') === 0);
-    if (!$ok_code && !$ok_txn) {
-        return false;
-    }
-    // amount + currency must match the order
-    $amount = null;
-    foreach (array('transaction_amount', 'product_price', 'total') as $k) {
-        if (isset($status->$k) && is_numeric($status->$k)) {
-            $amount = (float) $status->$k;
-            break;
-        }
-    }
-    if ($amount !== null && abs($amount - (float) $order->get_total()) > 0.01) {
-        error_log('QNBpay checkstatus: amount mismatch for order ' . $order->get_id());
-        return false;
-    }
-    return $status;
-}
-
-/**
- * SECURITY (BULGULAR #1): verify a QNBpay notification (webhook or 3D return) and settle
- * only when the server confirms payment. Returns true (settled), 'preauth' (blocked, not
- * captured) or false (rejected). Never settles on the notification alone.
- */
-function qnbpay_settle_from_notification($order, $invoice_id, $payment_status, $transaction_type, $order_no, $incoming_hash, $context)
-{
-    $qnb_pay = new QNBPay_sanalpos();
-    $app_secret = $qnb_pay->get_option('app_secret');
-
-    // Failed notification: mark failed only after the server confirms it is NOT paid, so a
-    // forged payment_status=0 cannot flip a genuinely paid order.
-    if ((string) $payment_status !== '1') {
-        if (!qnbpay_checkstatus_paid($invoice_id, $order)) {
-            $order->update_status('failed', __('QNBpay: islem basarisiz (dogrulandi).', 'QNBPay'));
-        }
-        return true;
-    }
-
-    // Integrity: if a hash_key is present it must decrypt and match this invoice/total/currency.
-    if (is_string($incoming_hash) && $incoming_hash !== '') {
-        list($h_status, $h_total, $h_invoice, $h_order, $h_currency) = qnbpay_validate_hash_key($incoming_hash, $app_secret);
-        $invoice_ok = ($h_invoice === $invoice_id);
-        $total_ok = ($h_total === '') ? true : (abs((float) $h_total - (float) $order->get_total()) <= 0.01);
-        $currency_ok = ($h_currency === '') ? true : (strcasecmp($h_currency, $order->get_currency()) === 0);
-        if (!$invoice_ok || !$total_ok || !$currency_ok) {
-            error_log('QNBpay ' . $context . ': hash_key mismatch for order ' . $order->get_id());
-            return false;
-        }
-    }
-
-    // Authoritative gate: server-to-server checkstatus must confirm payment + amount.
-    $status = qnbpay_checkstatus_paid($invoice_id, $order);
-    if ($status === false) {
-        error_log('QNBpay ' . $context . ': checkstatus did not confirm order ' . $order->get_id());
-        return false;
-    }
-
-    // Idempotency: never re-settle an already paid order.
-    if ($order->is_paid()) {
-        return true;
-    }
-
-    $ref = ($order_no !== '') ? $order_no : (isset($status->order_id) ? $status->order_id : $invoice_id);
-
-    // Pre-Authorization (webhook "Durum 2"): success but funds only BLOCKED. This PR does not
-    // capture (confirmPayment is a refactor-PR concern); classify and note, do not complete.
-    $is_preauth = (stripos((string) $transaction_type, 'pre') !== false)
-        || (isset($status->transaction_type) && stripos((string) $status->transaction_type, 'pre') !== false);
-    if ($is_preauth) {
-        $order->update_status('on-hold', sprintf(__('QNBpay: on provizyon (Pre-Auth) basarili, tutar bloke. Auth zorunlu, cekim yapilmadi. Referans: %s', 'QNBPay'), $ref));
-        return 'preauth';
-    }
-
-    // Auth: capture confirmed by checkstatus -> settle (this replaces the old dead payment_complete()).
-    $order->payment_complete($ref);
-    $order->add_order_note(sprintf(__('QNBpay: odeme dogrulandi ve alindi (%s). Referans: %s', 'QNBPay'), $context, $ref));
-    if (function_exists('WC') && WC()->cart) {
-        WC()->cart->empty_cart();
-    }
-    return true;
 }
 
 function my_custom_public_page()
@@ -435,69 +304,19 @@ function my_custom_public_page()
         }
     }
 
-    // ---------------------------------------------------------------------------------
-    // SECURITY (BULGULAR #1): QNBpay notifications (sale webhook + 3D/hosted return).
-    // Both can arrive as GET or POST (the 3D result is sent with response_method=POST, so
-    // reading only $_GET silently dropped every successful settlement). Nothing is settled
-    // on the message alone: hash_key is validated when present and /api/checkstatus confirms
-    // the money server-side before payment_complete().
-    // ---------------------------------------------------------------------------------
-    $qnb_req = array_merge($_GET, $_POST); // individual values are sanitized below
-
-    // (a) Sale webhook: POST /?webhook=1
-    if (isset($_GET['webhook']) && $_GET['webhook'] == 1) {
-        $invoice_id = isset($qnb_req['invoice_id']) ? sanitize_text_field(wp_unslash($qnb_req['invoice_id'])) : '';
-        $payment_status = isset($qnb_req['payment_status']) ? sanitize_text_field(wp_unslash($qnb_req['payment_status'])) : '';
-        $order_no = isset($qnb_req['order_no']) ? sanitize_text_field(wp_unslash($qnb_req['order_no'])) : '';
-        $transaction_type = isset($qnb_req['transaction_type']) ? sanitize_text_field(wp_unslash($qnb_req['transaction_type'])) : '';
-        $incoming_hash = isset($qnb_req['hash_key']) ? wp_unslash($qnb_req['hash_key']) : '';
-
-        $order = qnbpay_order_from_invoice($invoice_id);
-        if (!$order) {
-            status_header(400);
-            error_log('QNBpay webhook: order not found for invoice');
-            exit;
-        }
-        $verdict = qnbpay_settle_from_notification($order, $invoice_id, $payment_status, $transaction_type, $order_no, $incoming_hash, 'webhook');
-        if ($verdict === false) {
-            status_header(400);
-            exit;
-        }
-        status_header(200);
-        exit;
-    }
-
-    // (b) 3D / hosted-page return (buyer lands here; invoice_id/payment_status in GET or POST)
-    $return_invoice = isset($qnb_req['invoice_id']) ? sanitize_text_field(wp_unslash($qnb_req['invoice_id'])) : '';
-    if ($return_invoice !== '' && strpos($return_invoice, 'WOO') !== false && isset($qnb_req['payment_status'])) {
-        $payment_status = sanitize_text_field(wp_unslash($qnb_req['payment_status']));
-        $order_no = isset($qnb_req['order_no']) ? sanitize_text_field(wp_unslash($qnb_req['order_no'])) : '';
-        $transaction_type = isset($qnb_req['transaction_type']) ? sanitize_text_field(wp_unslash($qnb_req['transaction_type'])) : '';
-        $incoming_hash = isset($qnb_req['hash_key']) ? wp_unslash($qnb_req['hash_key']) : '';
-
-        $order = qnbpay_order_from_invoice($return_invoice);
-        if (!$order) {
-            wc_add_notice(__('Odeme dogrulanamadi.', 'QNBPay'), 'error');
-            wp_safe_redirect(wc_get_checkout_url());
-            exit;
-        }
-
-        $verdict = qnbpay_settle_from_notification($order, $return_invoice, $payment_status, $transaction_type, $order_no, $incoming_hash, 'return');
-        if ($verdict === false) {
-            // Reflected-XSS safe (BULGULAR #7): never echo raw request input into a notice.
-            wc_add_notice(__('Odeme sunucu tarafinda dogrulanamadi.', 'QNBPay'), 'error');
-            wp_safe_redirect(wc_get_checkout_url());
-            exit;
-        }
-        wp_safe_redirect($order->get_checkout_order_received_url());
-        exit;
-    }
+    // QNBpay notifications (webhook + hosted/3D return) are handled by the
+    // QNBPay_Webhook layer (includes/class-qnbpay-webhook.php).
 }
 
 
 function get_installment()
 {
-
+    // REFACTOR/BULGULAR #5: the hosted /purchase/link flow performs installment lookup on
+    // QNB's page from the BIN, so the full card number never reaches this endpoint. This
+    // legacy admin-ajax handler (which forwarded the full PAN to getpos) is disabled. Kept
+    // for one-commit rollback with the on-site card form.
+    wp_send_json(array('data' => '', 'pos_id' => '', 'pos_amt' => '', 'installments_number' => '', 'hash_key' => ''));
+    return;
     if (!empty($_POST['cc_number'])) {
         global $woocommerce;
 
@@ -529,7 +348,8 @@ function get_installment()
 
         $pos_post['is_comission_from_user'] = $qnb_pay->get_option('installment_type') == "yes" ? 1 : 0;
         $pos_post['is_single_payment_allowed'] = true;
-        $headers = ['Accept: application/json', 'Content-Type: application/json', "Authorization: Bearer {$_POST['qnb_token']}"];
+        $qnb_api = new QNBPay_Api();
+        $headers = ['Accept: application/json', 'Content-Type: application/json', 'Authorization: Bearer ' . $qnb_api->get_token()]; // BULGULAR #4: token fetched server-side, not from the browser
 
         $ch = curl_init();
 
