@@ -1,12 +1,14 @@
 # QNBPay SanalPos (WooCommerce)
 
+> Bu, QNB Finansbank'in resmi WooCommerce eklentisinden turetilmis bagimsiz bir surumdur. QNB tarafindan saglanmaz ya da desteklenmez. Orijinal: QNB Finansbank (https://www.qnbpay.com.tr/).
+
 QNBPay ile WooCommerce odeme gecidi. Klasik kisa kod checkout ve Cart/Checkout Blocks checkout desteklenir. Odeme, QNB'nin barindirdigi (hosted) guvenli sayfada alinir; kart bilgileri sitenize hic ugramaz.
 
 ## Ozellikler
 
 - Klasik checkout ve Blocks checkout, ayni sunucu akisini paylasir.
 - Hosted odeme sayfasi: kart, taksit ve tutar QNB tarafinda; PCI kapsamini en aza indirir.
-- Donus ve webhook, sunucu tarafinda `checkstatus` ile dogrulanmadan siparis tamamlanmaz.
+- Donus ve webhook, sunucu tarafinda checkstatus ile dogrulanmadan siparis tamamlanmaz.
 - HPOS (High-Performance Order Storage) uyumlu.
 
 ## Gereksinimler
@@ -25,7 +27,7 @@ QNBPay ile WooCommerce odeme gecidi. Klasik kisa kod checkout ve Cart/Checkout B
 
 WooCommerce, Ayarlar, Odemeler, QNBPay Pos altinda:
 
-- `merchant_key`, `app_key`, `app_secret`, `merchant_id` degerlerinizi girin.
+- merchant_key, app_key, app_secret, merchant_id degerlerinizi girin.
 - Test icin "Test Modu"nu acin (test.qnbpay.com.tr); canli icin kapatin (portal.qnbpay.com.tr).
 - Odeme yontemini etkinlestirin.
 
@@ -35,4 +37,4 @@ Guncellemeler otomatiktir. Yeni bir surum yayinlandiginda WordPress yonetim pane
 
 ## Lisans
 
-GPL-2.0-or-later. Ayrintilar icin https://www.gnu.org/licenses/gpl-2.0.html adresine bakin.
+GPL-2.0-or-later. Tam metin icin depodaki LICENSE dosyasina bakin.
