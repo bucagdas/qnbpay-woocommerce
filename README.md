@@ -35,6 +35,10 @@ WooCommerce, Ayarlar, Odemeler, QNBPay Pos altinda:
 
 Guncellemeler otomatiktir. Yeni bir surum yayinlandiginda WordPress yonetim panelindeki Guncellemeler ekraninda gorunur ve oradan uygulanir.
 
+## Degisiklikler
+
+Surumler arasi degisiklikler icin depodaki CHANGELOG.md dosyasina bakin.
+
 ## Lisans
 
 GPL-2.0-or-later. Tam metin icin depodaki LICENSE dosyasina bakin.
