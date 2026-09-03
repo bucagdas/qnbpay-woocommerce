@@ -501,7 +501,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
                                     <option value=""><?php echo $this->getLocalizationContent('choose_card', $currency); ?></option>
                                     <?php foreach ($cards as $card): ?>
-                                        <option value="<?php echo $card->card_token; ?>"><?php echo $card->card_mask; ?></option>
+                                        <option value="<?php echo esc_attr($card->card_token); ?>"><?php echo esc_html($card->card_mask); ?></option>
                                     <?php endforeach; ?>
 
                                 <?php else: ?>
@@ -597,7 +597,7 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
         wp_register_script('woocommerce_qnb', plugins_url('js/qnb.js', __FILE__));
 
-        wp_localize_script('woocommerce_qnb', 'qnb_var', array('spinner' => plugins_url('images/spinner.gif', __FILE__)));
+        wp_localize_script('woocommerce_qnb', 'qnb_var', array('spinner' => plugins_url('images/spinner.gif', __FILE__), 'nonce' => wp_create_nonce('qnbpay_ajax'))); // BULGULAR #3: nonce for card-delete ajax
 
         wp_enqueue_script('woocommerce_qnb');
 
@@ -901,24 +901,25 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         $form .= '<form><script>document.getElementById("qnb-form").submit()</script>';
         //
         if ($is3d == 'yes') {
-            update_post_meta($order_id, 'qnb_payment_form', base64_encode(serialize($form)));
+            update_post_meta($order_id, 'qnb_payment_form', $form); // BULGULAR #2: store raw (no serialize); consumed once by the ?order_id relay
         } elseif (isset($_POST['qnb_3d']) && ($_POST['qnb_3d'] == 2)) {
-            update_post_meta($order_id, 'qnb_payment_form', base64_encode(serialize($form)));
+            update_post_meta($order_id, 'qnb_payment_form', $form); // BULGULAR #2: store raw (no serialize); consumed once by the ?order_id relay
         } elseif (isset($_POST['qnb_3d']) && ($_POST['qnb_3d'] == 4 || $_POST['qnb_3d'] == 8)) {
             $pay_data['purchase'] = 'yes';
             unset($pay_data['is_2d_card']);
 
-            update_post_meta($order_id, 'qnb_payment_form', base64_encode(serialize($pay_data)));
+            update_post_meta($order_id, 'qnb_payment_form', wp_json_encode($pay_data));
         } else {
 
-            update_post_meta($order_id, 'qnb_payment_form', base64_encode(serialize($pay_data)));
+            update_post_meta($order_id, 'qnb_payment_form', wp_json_encode($pay_data));
         }
 
         return array(
 
             'result' => 'success',
 
-            'redirect' => get_site_url() . '/?order_id=' . $order_id
+            // BULGULAR #2: carry the order key so the ?order_id relay is bound to this buyer
+            'redirect' => get_site_url() . '/?order_id=' . $order_id . '&key=' . wc_get_order($order_id)->get_order_key()
 
         );
     }
