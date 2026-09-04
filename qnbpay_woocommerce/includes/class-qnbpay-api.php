@@ -77,7 +77,7 @@ class QNBPay_Api
         if ($authorize) {
             $token = $this->get_token();
             if ($token === '') {
-                if ($this->last_error === '') { $this->last_error = 'Token alinamadi (kimlik bilgileri ya da QNB erisimi).'; }
+                if ($this->last_error === '') { $this->last_error = 'Token alınamadı (kimlik bilgileri ya da QNB erişimi).'; }
                 return null;
             }
             $headers['Authorization'] = 'Bearer ' . $token;
@@ -123,10 +123,10 @@ class QNBPay_Api
         $diff = round((float) $total - $sum, 2);
         if (abs($diff) >= 0.01) {
             $items[] = array(
-                'name'        => __('Diger (kargo/vergi/indirim)', 'QNBPay'),
+                'name'        => __('Diğer (kargo/vergi/indirim)', 'QNBPay'),
                 'price'       => number_format($diff, 2, '.', ''),
                 'quantity'    => 1,
-                'description' => __('Toplam duzeltme', 'QNBPay'),
+                'description' => __('Toplam düzeltme', 'QNBPay'),
             );
         }
         if (empty($items)) {
@@ -138,7 +138,7 @@ class QNBPay_Api
             'currency_code' => $order->get_currency(),
             'invoice'       => array(
                 'invoice_id'          => $invoice_id,
-                'invoice_description' => sprintf(__('Siparis #%s', 'QNBPay'), $order->get_order_number()),
+                'invoice_description' => sprintf(__('Sipariş #%s', 'QNBPay'), $order->get_order_number()),
                 'total'               => $total,
                 'return_url'          => $return_url,
                 'cancel_url'          => $cancel_url,
@@ -258,7 +258,7 @@ class QNBPay_Api
             'app_secret' => $this->option('app_secret'),
         ));
         if (!is_object($resp)) {
-            return array('ok' => false, 'message' => $this->last_error !== '' ? $this->last_error : 'QNB sunucusuna baglanilamadi.');
+            return array('ok' => false, 'message' => $this->last_error !== '' ? $this->last_error : 'QNB sunucusuna bağlanılamadı.');
         }
         $code = isset($resp->status_code) ? (string) $resp->status_code : '';
         if ($code !== '100' || !isset($resp->data->token)) {
@@ -274,7 +274,7 @@ class QNBPay_Api
             'currency_code' => 'TRY',
             'invoice'       => array(
                 'invoice_id'          => 'PROBE' . time() . 'WOO0',
-                'invoice_description' => 'baglanti testi',
+                'invoice_description' => 'bağlantı testi',
                 'total'               => '1.00',
                 'return_url'          => home_url('/'),
                 'cancel_url'          => home_url('/'),
@@ -285,13 +285,13 @@ class QNBPay_Api
             'surname'       => 'Baglanti',
         ), true);
         if (!is_object($probe)) {
-            return array('ok' => false, 'is_3d' => $is3d, 'message' => 'Token alindi ama purchase/link yanit vermedi: ' . ($this->last_error !== '' ? $this->last_error : 'bilinmeyen'));
+            return array('ok' => false, 'is_3d' => $is3d, 'message' => 'Token alındı ama purchase/link yanıt vermedi: ' . ($this->last_error !== '' ? $this->last_error : 'bilinmeyen'));
         }
         $pcode = isset($probe->status_code) ? (string) $probe->status_code : '';
         if ($pcode !== '100' || empty($probe->link)) {
             $pdesc = isset($probe->status_description) ? $probe->status_description : ('status_code ' . $pcode);
             return array('ok' => false, 'is_3d' => $is3d, 'message' => 'purchase/link reddedildi: ' . $pdesc . ' (kod ' . $pcode . ')');
         }
-        return array('ok' => true, 'is_3d' => $is3d, 'message' => 'baglanti ve purchase/link OK');
+        return array('ok' => true, 'is_3d' => $is3d, 'message' => 'bağlantı ve purchase/link OK');
     }
 }

@@ -51,12 +51,12 @@ final class QNBPay_Blocks extends AbstractPaymentMethodType
             $icons[] = $cardbase . $c . '.svg';
         }
         return array(
-            'title'       => (isset($this->settings['title']) && $this->settings['title'] !== '') ? $this->settings['title'] : 'Banka/Kredi Karti ile Ode',
+            'title'       => (isset($this->settings['title']) && $this->settings['title'] !== '') ? $this->settings['title'] : 'Banka/Kredi Kartı ile Öde',
             'description' => isset($this->settings['description']) ? $this->settings['description'] : '',
             'supports'    => array('products'),
             'theme'       => $theme,
             'icons'       => $icons,
-            'note'        => __('Kartinizla QNB\'nin guvenli odeme sayfasinda odeyeceksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay'),
+            'note'        => __('Kartınızla QNB\'nin güvenli ödeme sayfasında ödeyeceksiniz. Kart bilgileriniz bu sitede saklanmaz.', 'QNBPay'),
         );
     }
 }

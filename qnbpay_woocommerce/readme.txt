@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, qnbpay, sanalpos, kredi karti
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ Klasik kisa kod checkout ve Cart/Checkout Blocks checkout desteklenir. Donus ve 
 4. WooCommerce > Ayarlar > Odemeler > QNBPay altinda anahtarlarinizi girin.
 
 == Changelog ==
+
+= 1.2.1 =
+* Eklendi: Bes yeni odeme satiri temasi (Gradyan, Koyu, Ince cerceve, Guvence rozetleri, Kompakt cip); toplam 10 tema.
+* Duzeltildi: Musteriye gorunen metinlerdeki Turkce karakterler.
 
 = 1.2.0 =
 * Degistirildi: Tum ceviri metinleri tek text domain'de (QNBPay) birlestirildi.

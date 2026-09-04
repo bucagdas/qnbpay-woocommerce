@@ -101,7 +101,7 @@ class QNBPay_Webhook
 
         if ((string) $payment_status !== '1') {
             if (!self::checkstatus_paid($invoice_id, $order)) {
-                $order->update_status('failed', __('QNBpay: islem basarisiz (dogrulandi).', 'QNBPay'));
+                $order->update_status('failed', __('QNBpay: işlem başarısız (doğrulandı).', 'QNBPay'));
             }
             return true;
         }
@@ -136,11 +136,11 @@ class QNBPay_Webhook
             $cap = $api->confirm_payment($invoice_id, 1, number_format((float) $order->get_total(), 2, '.', ''));
             $cap_ok = is_object($cap) && isset($cap->status_code) && in_array((string) $cap->status_code, array('100', '101'), true);
             if (!$cap_ok) {
-                $order->update_status('on-hold', sprintf(__('QNBpay: on provizyon basarili ama confirmPayment ile cekim yapilamadi. Referans: %s', 'QNBPay'), $ref));
+                $order->update_status('on-hold', sprintf(__('QNBpay: ön provizyon başarılı ama confirmPayment ile çekim yapılamadı. Referans: %s', 'QNBPay'), $ref));
                 return 'preauth';
             }
             $order->payment_complete($ref);
-            $order->add_order_note(sprintf(__('QNBpay: on provizyon confirmPayment ile cekildi (%s). Referans: %s', 'QNBPay'), $context, $ref));
+            $order->add_order_note(sprintf(__('QNBpay: ön provizyon confirmPayment ile çekildi (%s). Referans: %s', 'QNBPay'), $context, $ref));
             if (function_exists('WC') && WC()->cart) {
                 WC()->cart->empty_cart();
             }
@@ -148,7 +148,7 @@ class QNBPay_Webhook
         }
 
         $order->payment_complete($ref);
-        $order->add_order_note(sprintf(__('QNBpay: odeme dogrulandi ve alindi (%s). Referans: %s', 'QNBPay'), $context, $ref));
+        $order->add_order_note(sprintf(__('QNBpay: ödeme doğrulandı ve alındı (%s). Referans: %s', 'QNBPay'), $context, $ref));
         if (function_exists('WC') && WC()->cart) {
             WC()->cart->empty_cart();
         }
@@ -193,13 +193,13 @@ class QNBPay_Webhook
 
             $order = self::order_from_invoice($return_invoice);
             if (!$order) {
-                wc_add_notice(__('Odeme dogrulanamadi.', 'QNBPay'), 'error');
+                wc_add_notice(__('Ödeme doğrulanamadı.', 'QNBPay'), 'error');
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
             $verdict = self::settle($order, $return_invoice, $payment_status, $transaction_type, $order_no, $incoming_hash, 'return');
             if ($verdict === false) {
-                wc_add_notice(__('Odeme sunucu tarafinda dogrulanamadi.', 'QNBPay'), 'error');
+                wc_add_notice(__('Ödeme sunucu tarafında doğrulanamadı.', 'QNBPay'), 'error');
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }

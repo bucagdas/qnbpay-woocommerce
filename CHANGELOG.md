@@ -4,6 +4,18 @@ Bu dosya, projedeki belirgin degisiklikleri listeler.
 Bicim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) esas alir ve
 proje [Anlamsal Surumleme](https://semver.org/lang/tr/) kullanir.
 
+## [1.2.1] - 2026-09-04
+
+### Eklendi
+- Bes yeni odeme satiri temasi: Gradyan (premium), Koyu (dark), Ince cerceve,
+  Guvence rozetleri, Kompakt cip. Toplam 10 tema; klasik ve Blocks checkout ile
+  ayar sayfasindaki canli onizlemede.
+
+### Duzeltildi
+- Musteriye gorunen metinlerdeki Turkce karakterler duzeltildi (ornegin "Kartı",
+  "Öde", "Güvenli ödeme", "ödeyeceksiniz"): checkout notlari, Blocks, checkout
+  uyarilari, siparis notlari ve tanilama metinleri.
+
 ## [1.2.0] - 2026-09-04
 
 ### Degistirildi
@@ -123,6 +135,7 @@ bir arada.
 - Temel surum: orijinal QNBpay eklentisinin geldigi haliyle paketlenmis hali
   (guvenlik calismasi oncesi geri donus noktasi).
 
+[1.2.1]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.1
 [1.2.0]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.0
 [1.1.2]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.2
 [1.1.1]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.1
