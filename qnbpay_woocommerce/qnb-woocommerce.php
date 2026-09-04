@@ -111,11 +111,6 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
 
     public function init_form_fields()
     {
-
-        $installments = array(1 => __('Tek Çekim (Peşin)', 'QNBPay'));
-        for ($i = 2; $i <= 12; $i++) {
-            $installments[$i] = sprintf(__('%d Taksit', 'QNBPay'), $i);
-        }
         $this->form_fields = [
 
             'section_api' => array(
@@ -179,18 +174,10 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
                 'type'    => 'checkbox',
                 'default' => 'yes'
             ),
-            'installments' => array(
-                'title'             => __('Taksit Sayısı', 'QNBPay'),
-                'type'              => 'multiselect',
-                'class'             => 'wc-enhanced-select',
-                'options'           => $installments,
-                'default'           => array(),
-                'desc_tip'          => false,
-                'description'       => __('Ödeme sayfasında sunulacak taksit sayıları. Boş bırakırsanız QNB POS tanımınızdaki tüm taksitler gösterilir; seçim yaparsanız yalnızca seçtikleriniz sunulur.', 'QNBPay'),
-                'custom_attributes' => array(
-                    'data-placeholder' => __('Tümü (POS varsayılanı)', 'QNBPay'),
-                ),
-            ),
+            // Taksit seçenekleri QNB hosted ödeme sayfasında POS tanımınıza göre
+            // gösterilir; eklentiden ayrıca sınırlanmaz (selected_installments
+            // hosted akışta ödemeyi bozuyor). "Vade Farkını Kart Sahibi Ödesin"
+            // seçeneği geçerlidir ve QNB'ye iletilir.
 
             'section_display' => array(
                 'title'       => __('Görünüm', 'QNBPay'),

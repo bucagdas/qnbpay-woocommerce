@@ -152,21 +152,11 @@ class QNBPay_Api
         if ($txn !== '') {
             $body['invoice']['transaction_type'] = $txn; // Auth / PreAuth
         }
-        // Limit the installment options shown on QNB's hosted page to the ones the
-        // merchant selected in settings. Empty selection => QNB shows its POS defaults.
-        $sel = $this->option('installments');
-        if (is_array($sel) && !empty($sel)) {
-            $counts = array();
-            foreach ($sel as $n) {
-                $n = (int) $n;
-                if ($n >= 1 && $n <= 12) {
-                    $counts[] = $n;
-                }
-            }
-            if (!empty($counts)) {
-                $body['selected_installments'] = array_values(array_unique($counts));
-            }
-        }
+        // NOTE: do NOT send 'selected_installments'. On QNB's hosted page it makes the
+        // final paySmart3D submission post an empty 'installments_number', which QNB
+        // rejects with HTTP 400 ("installments_number: The value '' is invalid") and the
+        // buyer sees a raw error. Installments are governed by the merchant's QNB POS and
+        // shown natively on the hosted page, so no restriction field is needed here.
         // Who pays the installment commission (vade farki): 'yes' => buyer pays.
         $body['is_comission_from_user'] = ($this->option('installment_type') === 'yes') ? '1' : '0';
         $webhook = $this->option('sale_webhook_key');

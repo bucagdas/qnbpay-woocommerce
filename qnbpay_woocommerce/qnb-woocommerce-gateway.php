@@ -3,7 +3,7 @@
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.2.1
+    Version: 1.2.2
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5
@@ -160,7 +160,7 @@ function qnbpay_admin_settings_assets($hook)
     if ($tab !== 'checkout' || $section !== 'qnbpay_sanalpos') {
         return;
     }
-    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.2.1', true);
+    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.2.2', true);
 
     // Provide the backed-up real credentials (if any) so the settings page can
     // offer a "restore real keys" action after the sandbox test keys are loaded.

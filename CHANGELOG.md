@@ -4,6 +4,18 @@ Bu dosya, projedeki belirgin degisiklikleri listeler.
 Bicim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) esas alir ve
 proje [Anlamsal Surumleme](https://semver.org/lang/tr/) kullanir.
 
+## [1.2.2] - 2026-09-04
+
+### Duzeltildi
+- Kritik: Taksit ayari secili oldugunda odeme, QNB hosted sayfasinda
+  "installments_number: The value '' is invalid" (HTTP 400) hatasiyla
+  basarisiz oluyordu. Eklenti artik `selected_installments` gondermiyor;
+  taksitler QNB POS tanimina gore hosted sayfada gosteriliyor.
+
+### Kaldirildi
+- Islevsiz "Taksit Sayisi" ayar alani (taksitler QNB tarafinda yonetiliyor).
+  "Vade Farkini Kart Sahibi Odesin" gecerliligini koruyor.
+
 ## [1.2.1] - 2026-09-04
 
 ### Eklendi
@@ -135,6 +147,7 @@ bir arada.
 - Temel surum: orijinal QNBpay eklentisinin geldigi haliyle paketlenmis hali
   (guvenlik calismasi oncesi geri donus noktasi).
 
+[1.2.2]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.2
 [1.2.1]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.1
 [1.2.0]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.0
 [1.1.2]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.2
