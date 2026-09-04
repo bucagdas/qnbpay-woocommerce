@@ -4,6 +4,22 @@ Bu dosya, projedeki belirgin degisiklikleri listeler.
 Bicim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) esas alir ve
 proje [Anlamsal Surumleme](https://semver.org/lang/tr/) kullanir.
 
+## [1.1.1] - 2026-09-04
+
+### Duzeltildi
+- Tekrarlayan (abonelik) urun kontrolunde WooCommerce 3.0'da kaldirilan
+  `$product->id` erisimi giderildi; varyasyonlarda dogru urune (ebeveyn)
+  bakiliyor. Store API'de her istekte olusan "id was called incorrectly"
+  uyarilari sona erdi.
+
+### Degistirildi
+- Abonelik sepet mesajlari: sepet temizlendiginde gosterilen mesaj artik hata
+  degil bilgilendirme (`notice`) tonunda. Iki musteri mesaji Turkcelestirildi.
+
+### Eklendi
+- `readme.txt` (Tested up to: 7.1); guncelleme ekranindaki "Not tested"
+  uyumluluk uyarisi giderildi.
+
 ## [1.1.0] - 2026-09-03
 
 ### Eklendi
@@ -91,6 +107,7 @@ bir arada.
 - Temel surum: orijinal QNBpay eklentisinin geldigi haliyle paketlenmis hali
   (guvenlik calismasi oncesi geri donus noktasi).
 
+[1.1.1]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.1
 [1.1.0]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.0
 [1.0.4]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.0.4
 [1.0.3]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.0.3

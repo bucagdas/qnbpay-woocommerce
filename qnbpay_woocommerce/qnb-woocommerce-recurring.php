@@ -212,7 +212,10 @@ function remove_all_cart_item_if_recurring_product_add( $valid, $product_id, $qu
 
             WC()->cart->empty_cart();
 
-            wc_add_notice( "You cannot have another item in your cart for recurring payments.", 'error' );
+            wc_add_notice(
+                __( 'Abonelik ürünleri tek başına satın alınır; sepetinizdeki diğer ürünler kaldırıldı.', 'QNBPay' ),
+                'notice'
+            );
 
         }
 
@@ -230,7 +233,7 @@ function remove_all_cart_item_if_recurring_product_add( $valid, $product_id, $qu
 
                     //WC()->cart->empty_cart();
 
-                    wc_add_notice( "You cannot have another item in your cart for recurring payments.", 'error' );
+                    wc_add_notice( __( 'Sepetinizde abonelik ürünü varken başka ürün ekleyemezsiniz.', 'QNBPay' ), 'error' );
 
                     return false;
 
@@ -260,7 +263,14 @@ add_filter( 'woocommerce_add_to_cart_validation', 'remove_all_cart_item_if_recur
 
 function qnb_recurring_product_sold_individually( $individually, $product ){
 
-    $is_recurring = get_post_meta($product->id, "_recurring", true);
+    // WC legacy $product->id maps to parent_id for variations, else get_id(); the
+    // _recurring meta lives on the parent product, so mirror that mapping here.
+    // Using get_id() alone would miss variations. ($product->id was removed in WC 3.0
+    // and fires wc_doing_it_wrong on every Store API request.)
+    $product_id = $product->is_type( 'variation' )
+        ? $product->get_parent_id()
+        : $product->get_id();
+    $is_recurring = get_post_meta($product_id, "_recurring", true);
 
 
 
