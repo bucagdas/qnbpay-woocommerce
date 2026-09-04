@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, qnbpay, sanalpos, kredi karti
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Klasik kisa kod checkout ve Cart/Checkout Blocks checkout desteklenir. Donus ve 
 4. WooCommerce > Ayarlar > Odemeler > QNBPay altinda anahtarlarinizi girin.
 
 == Changelog ==
+
+= 1.1.2 =
+* Eklendi: Eklenti listesindeki islem baglantilarina repoya giden "GitHub" baglantisi.
 
 = 1.1.1 =
 * Duzeltildi: Tekrarlayan (abonelik) urun kontrolunde WooCommerce 3.0'da kaldirilan $product->id erisimi giderildi; varyasyonlarda dogru urune bakilir. Store API'de her istekte olusan "id was called incorrectly" uyarilari sona erdi.

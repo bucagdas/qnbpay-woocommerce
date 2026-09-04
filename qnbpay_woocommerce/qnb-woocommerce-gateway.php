@@ -3,7 +3,7 @@
     Plugin Name: QNBPay SanalPos
     Plugin URI: https://github.com/bucagdas/qnbpay-woocommerce
     Description: WooCommerce icin QNBPay odeme gecidi. Klasik ve Cart/Checkout Blocks checkout, hosted odeme sayfasi.
-    Version: 1.1.1
+    Version: 1.1.2
     Author: bucagdas
     Requires Plugins: woocommerce
     Requires at least: 6.5
@@ -108,7 +108,10 @@ function delete_qnb_card()
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'qnb_settings');
 function qnb_settings($links)
 {
-    $plugin_links = ['<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=QNBPay_sanalpos') . '">' . __('Settings', 'QNBPay_sanalpos') . '</a>'];
+    $plugin_links = [
+        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=QNBPay_sanalpos') . '">' . __('Settings', 'QNBPay_sanalpos') . '</a>',
+        '<a href="https://github.com/bucagdas/qnbpay-woocommerce" target="_blank" rel="noopener noreferrer">GitHub</a>',
+    ];
     return array_merge($plugin_links, $links);
 }
 
@@ -152,7 +155,7 @@ function qnbpay_admin_settings_assets($hook)
     if ($tab !== 'checkout' || $section !== 'qnbpay_sanalpos') {
         return;
     }
-    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.1.1', true);
+    wp_enqueue_script('qnbpay-admin-settings', plugins_url('assets/js/admin-settings.js', __FILE__), array(), '1.1.2', true);
 
     // Provide the backed-up real credentials (if any) so the settings page can
     // offer a "restore real keys" action after the sandbox test keys are loaded.
