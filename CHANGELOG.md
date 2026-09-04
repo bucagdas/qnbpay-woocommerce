@@ -4,6 +4,17 @@ Bu dosya, projedeki belirgin degisiklikleri listeler.
 Bicim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) esas alir ve
 proje [Anlamsal Surumleme](https://semver.org/lang/tr/) kullanir.
 
+## [1.2.0] - 2026-09-04
+
+### Degistirildi
+- Tum ceviri metinleri tek text domain'de (`QNBPay`) birlestirildi; hatali
+  `woocommerce` ve daginik `qnb` / `QNBPay_sanalpos` domain kullanimlari giderildi.
+  Gateway ID/section olarak `QNBPay_sanalpos` degismedi.
+
+### Eklendi
+- `load_plugin_textdomain` ile `/i18n/languages` altindan ceviri yukleme
+  (gelecekteki ceviriler icin).
+
 ## [1.1.2] - 2026-09-04
 
 ### Eklendi
@@ -112,6 +123,7 @@ bir arada.
 - Temel surum: orijinal QNBpay eklentisinin geldigi haliyle paketlenmis hali
   (guvenlik calismasi oncesi geri donus noktasi).
 
+[1.2.0]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.2.0
 [1.1.2]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.2
 [1.1.1]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.1
 [1.1.0]: https://github.com/bucagdas/qnbpay-woocommerce/releases/tag/v1.1.0

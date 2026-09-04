@@ -25,11 +25,11 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
         // global ID
         $this->id = "QNBPay_sanalpos";
         // Show Title
-        $this->method_title = __("QNBPay Sanalpos", 'qnb');
+        $this->method_title = __("QNBPay Sanalpos", 'QNBPay');
         // Show Description
-        $this->method_description = __("Woocommerce için QNBPay Entegrasyonu", 'qnb');
+        $this->method_description = __("Woocommerce için QNBPay Entegrasyonu", 'QNBPay');
         // vertical tab title
-        $this->title = __("Banka/Kredi Karti ile Ode", 'qnb');
+        $this->title = __("Banka/Kredi Karti ile Ode", 'QNBPay');
         $this->icon = null;
         $this->has_fields = true;
         // Enable the WooCommerce refund button for this gateway (QNB /api/refund).
@@ -112,115 +112,115 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
     public function init_form_fields()
     {
 
-        $installments = array(1 => __('Tek Çekim (Peşin)', 'qnb'));
+        $installments = array(1 => __('Tek Çekim (Peşin)', 'QNBPay'));
         for ($i = 2; $i <= 12; $i++) {
-            $installments[$i] = sprintf(__('%d Taksit', 'qnb'), $i);
+            $installments[$i] = sprintf(__('%d Taksit', 'QNBPay'), $i);
         }
         $this->form_fields = [
 
             'section_api' => array(
-                'title'       => __('QNB API bilgileri', 'qnb'),
+                'title'       => __('QNB API bilgileri', 'QNBPay'),
                 'type'        => 'title',
-                'description' => __('QNBpay üye işyeri panelinden aldığınız anahtarlar. Test için Merchant Key alanının yanındaki butonu kullanabilirsiniz. Bu yöntemi açıp kapatmak için Ödemeler listesindeki aç/kapa düğmesini kullanın.', 'qnb'),
+                'description' => __('QNBpay üye işyeri panelinden aldığınız anahtarlar. Test için Merchant Key alanının yanındaki butonu kullanabilirsiniz. Bu yöntemi açıp kapatmak için Ödemeler listesindeki aç/kapa düğmesini kullanın.', 'QNBPay'),
             ),
             'merchant_key' => [
-                'title'    => __('Merchant Key', 'qnb'),
+                'title'    => __('Merchant Key', 'QNBPay'),
                 'type'     => 'text',
-                'desc_tip' => __('QNBpay panelindeki Merchant Key.', 'qnb'),
+                'desc_tip' => __('QNBpay panelindeki Merchant Key.', 'QNBPay'),
             ],
             'app_key' => [
-                'title'    => __('App Key', 'qnb'),
+                'title'    => __('App Key', 'QNBPay'),
                 'type'     => 'text',
-                'desc_tip' => __('API App Key.', 'qnb'),
+                'desc_tip' => __('API App Key.', 'QNBPay'),
             ],
             'app_secret' => [
-                'title'    => __('App Secret', 'qnb'),
+                'title'    => __('App Secret', 'QNBPay'),
                 'type'     => 'text',
-                'desc_tip' => __('API App Secret.', 'qnb'),
+                'desc_tip' => __('API App Secret.', 'QNBPay'),
             ],
             'merchant_id' => [
-                'title'    => __('Merchant ID', 'qnb'),
+                'title'    => __('Merchant ID', 'QNBPay'),
                 'type'     => 'text',
-                'desc_tip' => __('Üye işyeri numarası (Merchant ID).', 'qnb'),
+                'desc_tip' => __('Üye işyeri numarası (Merchant ID).', 'QNBPay'),
             ],
             'sale_webhook_key' => [
-                'title'       => __('Satış Webhook Anahtarı', 'qnb'),
+                'title'       => __('Satış Webhook Anahtarı', 'QNBPay'),
                 'type'        => 'text',
-                'desc_tip'    => __('QNB panelinde "Satış Webhook" adresi olarak aşağıdaki URL\'yi tanımlayın.', 'qnb'),
+                'desc_tip'    => __('QNB panelinde "Satış Webhook" adresi olarak aşağıdaki URL\'yi tanımlayın.', 'QNBPay'),
                 'description' => get_site_url() . '?webhook=1',
             ],
             /*'recurring_sale_webhook_key' => [
-                    'title' => __('Yinelenen Satış Webhook Anahtarı', 'qnb'),
+                    'title' => __('Yinelenen Satış Webhook Anahtarı', 'QNBPay'),
                     'type' => 'text',
-                    'desc_tip' => __('Yinelenen Satış Webhook Anahtarı', 'qnb'),
+                    'desc_tip' => __('Yinelenen Satış Webhook Anahtarı', 'QNBPay'),
                     'description' => get_site_url() . '?webhook=1&recurring=1',
                 ],*/
 
             'section_payment' => array(
-                'title' => __('Ödeme ayarları', 'qnb'),
+                'title' => __('Ödeme ayarları', 'QNBPay'),
                 'type'  => 'title',
             ),
             'environment' => [
-                'title'       => __('Test Modu', 'qnb'),
-                'label'       => __('Etkinleştir', 'qnb'),
+                'title'       => __('Test Modu', 'QNBPay'),
+                'label'       => __('Etkinleştir', 'QNBPay'),
                 'type'        => 'checkbox',
-                'description' => __('Test ortamında deneme yapmak için etkinleştirin. Canlıya geçerken kapatın.', 'qnb'),
+                'description' => __('Test ortamında deneme yapmak için etkinleştirin. Canlıya geçerken kapatın.', 'QNBPay'),
                 'default'     => 'no',
             ],
             'transaction_type' => array(
-                'title'   => __('Provizyon Türü', 'qnb'),
+                'title'   => __('Provizyon Türü', 'QNBPay'),
                 'type'    => 'select',
                 'default' => 'Auth',
-                'options' => array('Auth' => __('Auth (anında çekim)', 'qnb'), 'PreAuth' => __('PreAuth (ön provizyon)', 'qnb'))
+                'options' => array('Auth' => __('Auth (anında çekim)', 'QNBPay'), 'PreAuth' => __('PreAuth (ön provizyon)', 'QNBPay'))
             ),
             'installment_type' => array(
-                'title'   => __('Vade Farkını Kart Sahibi Ödesin', 'qnb'),
-                'label'   => __('Etkinleştir', 'qnb'),
+                'title'   => __('Vade Farkını Kart Sahibi Ödesin', 'QNBPay'),
+                'label'   => __('Etkinleştir', 'QNBPay'),
                 'type'    => 'checkbox',
                 'default' => 'yes'
             ),
             'installments' => array(
-                'title'             => __('Taksit Sayısı', 'qnb'),
+                'title'             => __('Taksit Sayısı', 'QNBPay'),
                 'type'              => 'multiselect',
                 'class'             => 'wc-enhanced-select',
                 'options'           => $installments,
                 'default'           => array(),
                 'desc_tip'          => false,
-                'description'       => __('Ödeme sayfasında sunulacak taksit sayıları. Boş bırakırsanız QNB POS tanımınızdaki tüm taksitler gösterilir; seçim yaparsanız yalnızca seçtikleriniz sunulur.', 'qnb'),
+                'description'       => __('Ödeme sayfasında sunulacak taksit sayıları. Boş bırakırsanız QNB POS tanımınızdaki tüm taksitler gösterilir; seçim yaparsanız yalnızca seçtikleriniz sunulur.', 'QNBPay'),
                 'custom_attributes' => array(
-                    'data-placeholder' => __('Tümü (POS varsayılanı)', 'qnb'),
+                    'data-placeholder' => __('Tümü (POS varsayılanı)', 'QNBPay'),
                 ),
             ),
 
             'section_display' => array(
-                'title'       => __('Görünüm', 'qnb'),
+                'title'       => __('Görünüm', 'QNBPay'),
                 'type'        => 'title',
-                'description' => __('Ödeme adımında müşterinin gördüğü başlık ve satır görünümü.', 'qnb'),
+                'description' => __('Ödeme adımında müşterinin gördüğü başlık ve satır görünümü.', 'QNBPay'),
             ),
             'checkout_theme' => array(
-                'title'       => __('Ödeme satırı teması', 'qnb'),
+                'title'       => __('Ödeme satırı teması', 'QNBPay'),
                 'type'        => 'select',
                 'default'     => 'kartli',
                 'options'     => array(
-                    'sade'     => __('Sade', 'qnb'),
-                    'kartli'   => __('Kartlı (kart logoları)', 'qnb'),
-                    'vurgulu'  => __('Vurgulu (güvenli ödeme paneli)', 'qnb'),
-                    'modern'   => __('Modern (gölgeli kart)', 'qnb'),
-                    'kurumsal' => __('Kurumsal (banka görünümü)', 'qnb'),
+                    'sade'     => __('Sade', 'QNBPay'),
+                    'kartli'   => __('Kartlı (kart logoları)', 'QNBPay'),
+                    'vurgulu'  => __('Vurgulu (güvenli ödeme paneli)', 'QNBPay'),
+                    'modern'   => __('Modern (gölgeli kart)', 'QNBPay'),
+                    'kurumsal' => __('Kurumsal (banka görünümü)', 'QNBPay'),
                 ),
-                'description' => __('Ödeme yönteminin checkout görünümü.', 'qnb'),
+                'description' => __('Ödeme yönteminin checkout görünümü.', 'QNBPay'),
             ),
             'title' => [
-                'title'    => __('Başlık', 'qnb'),
+                'title'    => __('Başlık', 'QNBPay'),
                 'type'     => 'text',
-                'desc_tip' => __('Ödeme adımında görünen başlık.', 'qnb'),
-                'default'  => __('Banka/Kredi Karti ile Ode', 'qnb'),
+                'desc_tip' => __('Ödeme adımında görünen başlık.', 'QNBPay'),
+                'default'  => __('Banka/Kredi Karti ile Ode', 'QNBPay'),
             ],
             'description' => [
-                'title'    => __('Açıklama', 'qnb'),
+                'title'    => __('Açıklama', 'QNBPay'),
                 'type'     => 'textarea',
-                'desc_tip' => __('Başlığın altında görünen kısa açıklama.', 'qnb'),
-                'default'  => __('Kredi veya banka kartinizla QNB guvenli odeme sayfasinda odeyin.', 'qnb'),
+                'desc_tip' => __('Başlığın altında görünen kısa açıklama.', 'QNBPay'),
+                'default'  => __('Kredi veya banka kartinizla QNB guvenli odeme sayfasinda odeyin.', 'QNBPay'),
                 'css'      => 'max-width:450px;',
             ],
 
@@ -503,37 +503,37 @@ class QNBPay_sanalpos extends WC_Payment_Gateway
     {
         $order = wc_get_order($order_id);
         if (!$order) {
-            return new WP_Error('qnbpay_refund', __('Sipariş bulunamadı.', 'qnb'));
+            return new WP_Error('qnbpay_refund', __('Sipariş bulunamadı.', 'QNBPay'));
         }
         $invoice_id = $order->get_meta('_qnbpay_invoice_id');
         if (!$invoice_id) {
-            return new WP_Error('qnbpay_refund', __('QNBpay fatura referansı bulunamadı; bu sipariş QNBpay ile alınmamış olabilir.', 'qnb'));
+            return new WP_Error('qnbpay_refund', __('QNBpay fatura referansı bulunamadı; bu sipariş QNBpay ile alınmamış olabilir.', 'QNBPay'));
         }
 
         $api  = new QNBPay_Api();
         $resp = $api->refund($invoice_id, $amount);
         if (!is_object($resp)) {
-            $err = ($api->last_error !== '') ? $api->last_error : __('QNB iade servisine ulaşılamadı.', 'qnb');
+            $err = ($api->last_error !== '') ? $api->last_error : __('QNB iade servisine ulaşılamadı.', 'QNBPay');
             qnbpay_log('refund transport error for order ' . $order_id . ': ' . $err, 'error');
             return new WP_Error('qnbpay_refund', $err);
         }
 
         $code    = isset($resp->status_code) ? (string) $resp->status_code : '';
         $desc    = isset($resp->status_description) ? (string) $resp->status_description : '';
-        $amount_str = ($amount === null || $amount === '') ? __('tam tutar', 'qnb') : html_entity_decode(wp_strip_all_tags(wc_price($amount, array('currency' => $order->get_currency()))));
+        $amount_str = ($amount === null || $amount === '') ? __('tam tutar', 'QNBPay') : html_entity_decode(wp_strip_all_tags(wc_price($amount, array('currency' => $order->get_currency()))));
 
         if ($code === '100') {
-            $order->add_order_note(sprintf(__('QNBpay: iade tamamlandı (%1$s). Kod 100. %2$s', 'qnb'), $amount_str, $desc));
+            $order->add_order_note(sprintf(__('QNBpay: iade tamamlandı (%1$s). Kod 100. %2$s', 'QNBPay'), $amount_str, $desc));
             return true;
         }
         if ($code === '101') {
-            $order->add_order_note(sprintf(__('QNBpay: iade talebi alındı, QNB tarafında tamamlanacak (%1$s). Kod 101: QNB panelinden veya checkstatus ile doğrulayın.', 'qnb'), $amount_str));
+            $order->add_order_note(sprintf(__('QNBpay: iade talebi alındı, QNB tarafında tamamlanacak (%1$s). Kod 101: QNB panelinden veya checkstatus ile doğrulayın.', 'QNBPay'), $amount_str));
             return true;
         }
 
         qnbpay_log('refund rejected for order ' . $order_id . ' code=' . $code . ' reason=' . $desc, 'error');
-        $extra = ($code === '49') ? ' ' . __('(Aynı işlemde iki iade arasında en az 30 saniye bekleyin.)', 'qnb') : '';
-        return new WP_Error('qnbpay_refund', sprintf(__('QNBpay iade reddedildi. Kod %1$s. %2$s', 'qnb'), $code, $desc) . $extra);
+        $extra = ($code === '49') ? ' ' . __('(Aynı işlemde iki iade arasında en az 30 saniye bekleyin.)', 'QNBPay') : '';
+        return new WP_Error('qnbpay_refund', sprintf(__('QNBpay iade reddedildi. Kod %1$s. %2$s', 'QNBPay'), $code, $desc) . $extra);
     }
 
 }

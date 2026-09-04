@@ -18,9 +18,9 @@ function add_new_recurring_product_type( $types ){
 
         'wrapper_class' => 'show_if_simple',
 
-        'label'         => __( 'Recurring', 'woocommerce' ),
+        'label'         => __( 'Recurring', 'QNBPay' ),
 
-        'description'   => __( 'Product will be set as recurring', 'woocommerce' ),
+        'description'   => __( 'Product will be set as recurring', 'QNBPay' ),
 
         'default'       => 'no',
 
